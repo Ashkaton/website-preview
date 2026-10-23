@@ -56,9 +56,10 @@
     .stage.launching .eyebrow,.stage.launching .title-original,.stage.launching .launch{visibility:hidden;animation:none}
     .stage.launching .countdown{opacity:1;animation:countdown-enter .45s cubic-bezier(.2,.72,.24,1) both}
     .stage.launching .launch::before,.stage.launching .launch::after{animation:none!important;opacity:0!important}
-    .stage.launching .foot,.stage.launching .background-picker{animation:warp-copy 1.15s 5.2s ease-in forwards}
+    .stage.launching .foot>a,.stage.launching .foot .right>span,.stage.launching .background-picker{animation:warp-copy 1.15s 5.2s ease-in forwards}
     .stage.launching:after{animation-delay:5.2s}
     .launch{margin-top:34px}
+    .sound-toggle{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid rgba(255,255,255,.17);border-radius:50%;background:rgba(255,255,255,.045);color:#c7bec9;cursor:pointer;transition:color .2s,background .2s,border-color .2s}.sound-toggle:hover{color:#fff;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.35)}.sound-toggle svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.sound-toggle .sound-on{display:none}.sound-toggle[aria-pressed="true"] .sound-on{display:block}.sound-toggle[aria-pressed="true"] .sound-off{display:none}.sound-toggle:focus-visible{outline:2px solid #E62128;outline-offset:3px}
     @keyframes launch-glint{to{transform:translateX(120%);opacity:0}}
         .hint{justify-content:center;color:#c7bec9;margin:0}.key{border-color:#776d79;color:#ddd}
     .foot{position:relative;display:grid;grid-template-columns:1fr 1fr;border:0;padding-top:0;color:#c6bdc9;font-size:10px;font-weight:400}.foot>a{justify-self:start;color:white}.foot .right{justify-self:end;align-items:center}
@@ -111,7 +112,7 @@
         </svg></div><div class="spec">EST. 2020<b>ДВИЖЕНИЕ · ЛЮДИ · АВТО</b></div>
       </section>
     </main>
-    <footer class="foot"><a href="https://cargasm.club">CARGASM CLUB</a><div class="right"><span>6.11</span></div></footer>
+    <footer class="foot"><a href="https://cargasm.club">CARGASM CLUB</a><div class="right"><span>6.11</span><button class="sound-toggle" id="soundToggle" type="button" aria-label="Включить звук" aria-pressed="false" title="Включить звук"><svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m17 9 5 6m0-6-5 6"/></svg><svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7m3-10a9 9 0 0 1 0 13"/></svg></button></div></footer>
   </div>
   <section class="overlay" id="presentation" aria-label="Видео-презентация" aria-hidden="true">
     <div class="video-shell"><div class="video-label">Cargasm · Официальный запуск</div>
@@ -127,16 +128,74 @@
       demoVideoDurationMs: 5000,
       destination: "https://cargasm.club/"
     };
-    const stage=document.getElementById('stage'), button=document.getElementById('launch'), countdown=document.getElementById('countdown'), countdownDigit=document.getElementById('countdownDigit'), overlay=document.getElementById('presentation'), frame=document.getElementById('videoFrame'), back=document.getElementById('back'), bar=document.getElementById('progressBar');
-    let video, demoTimer, countdownTimer, presentationTimer, audioContext, presentationFinished=false;
+    const stage=document.getElementById('stage'), button=document.getElementById('launch'), countdown=document.getElementById('countdown'), countdownDigit=document.getElementById('countdownDigit'), overlay=document.getElementById('presentation'), frame=document.getElementById('videoFrame'), back=document.getElementById('back'), bar=document.getElementById('progressBar'), soundToggle=document.getElementById('soundToggle');
+    let video, demoTimer, countdownTimer, presentationTimer, ambientFadeTimer, warpTimer, audioContext, ambientBuffer, ambientSource, ambientGain, ambientLoad, warpBuffer, warpLoad, warpSource, soundEnabled=false, presentationFinished=false;
     function unlockAudio(){
       const AudioContextClass=window.AudioContext||window.webkitAudioContext;
       if(!AudioContextClass)return;
       if(!audioContext)audioContext=new AudioContextClass();
       if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
     }
+    async function prepareAmbient(){
+      if(ambientBuffer)return ambientBuffer;
+      if(!ambientLoad)ambientLoad=fetch('ambient-loop.wav').then(response=>{if(!response.ok)throw new Error('Не удалось загрузить фоновый звук');return response.arrayBuffer()}).then(data=>audioContext.decodeAudioData(data));
+      const decoded=await ambientLoad, crossfadeSeconds=2, samples=Math.min(Math.floor(decoded.sampleRate*crossfadeSeconds),decoded.length>>1), loopBuffer=audioContext.createBuffer(decoded.numberOfChannels,decoded.length,decoded.sampleRate);
+      for(let channel=0;channel<decoded.numberOfChannels;channel++){
+        const input=decoded.getChannelData(channel), output=loopBuffer.getChannelData(channel);
+        output.set(input);
+        for(let i=0;i<samples;i++){
+          const p=i/(samples-1), angle=p*Math.PI/2, tail=decoded.length-samples+i;
+          output[tail]=input[tail]*Math.cos(angle)+input[i]*Math.sin(angle);
+        }
+      }
+      ambientBuffer={buffer:loopBuffer,loopStart:samples/decoded.sampleRate};
+      return ambientBuffer;
+    }
+    async function prepareWarpSound(){
+      if(warpBuffer)return warpBuffer;
+      if(!warpLoad)warpLoad=fetch('lightspeed-whoosh-v2.wav').then(response=>{if(!response.ok)throw new Error('Не удалось загрузить звук ускорения');return response.arrayBuffer()}).then(data=>audioContext.decodeAudioData(data));
+      warpBuffer=await warpLoad;
+      return warpBuffer;
+    }
+    async function playWarpSound(){
+      if(!soundEnabled||!audioContext||audioContext.state!=='running')return;
+      try{
+        const buffer=await prepareWarpSound();
+        if(!soundEnabled||!stage.classList.contains('launching'))return;
+        const source=audioContext.createBufferSource(),gain=audioContext.createGain();
+        source.buffer=buffer;gain.gain.setValueAtTime(.16,audioContext.currentTime);
+        source.connect(gain);gain.connect(audioContext.destination);source.start();warpSource=source;
+        source.addEventListener('ended',()=>{if(warpSource===source)warpSource=null;},{once:true});
+      }catch(error){console.error(error);}
+    }
+    function stopWarpSound(){if(!warpSource)return;try{warpSource.stop()}catch{}warpSource=null;}
+    async function startAmbient(){
+      if(!soundEnabled)return;
+      unlockAudio();
+      try{
+        const prepared=await prepareAmbient();
+        if(!soundEnabled||ambientSource||stage.classList.contains('launching'))return;
+        const source=audioContext.createBufferSource(), gain=audioContext.createGain();
+        source.buffer=prepared.buffer;source.loop=true;source.loopStart=prepared.loopStart;source.loopEnd=prepared.buffer.duration;
+        gain.gain.setValueAtTime(.0001,audioContext.currentTime);gain.gain.exponentialRampToValueAtTime(.68,audioContext.currentTime+.35);
+        source.connect(gain);gain.connect(audioContext.destination);source.start(0,prepared.loopStart);
+        ambientSource=source;ambientGain=gain;source.addEventListener('ended',()=>{if(ambientSource===source){ambientSource=null;ambientGain=null;}},{once:true});
+      }catch(error){soundEnabled=false;updateSoundButton();console.error(error);}
+    }
+    function stopAmbient(fadeDuration=0){
+      if(!ambientSource||!ambientGain)return;
+      const source=ambientSource,gain=ambientGain,now=audioContext.currentTime;
+      gain.gain.cancelScheduledValues(now);gain.gain.setValueAtTime(Math.max(gain.gain.value,.0001),now);
+      if(fadeDuration){gain.gain.linearRampToValueAtTime(.0001,now+fadeDuration);window.setTimeout(()=>{try{source.stop()}catch{}},fadeDuration*1000+30)}
+      else{gain.gain.setValueAtTime(.0001,now);try{source.stop(now+.02)}catch{}}
+      ambientSource=null;ambientGain=null;
+    }
+    function updateSoundButton(){
+      soundToggle.setAttribute('aria-pressed',String(soundEnabled));
+      const label=soundEnabled?'Выключить звук':'Включить звук';soundToggle.setAttribute('aria-label',label);soundToggle.title=label;
+    }
     function playCountdownTone(value){
-      if(!audioContext||audioContext.state!=='running')return;
+      if(!soundEnabled||!audioContext||audioContext.state!=='running')return;
       const now=audioContext.currentTime, finalTone=value===0, duration=finalTone ? .34 : .13;
       const oscillator=audioContext.createOscillator(), gain=audioContext.createGain();
       oscillator.type='sine';
@@ -147,6 +206,15 @@
       oscillator.connect(gain);gain.connect(audioContext.destination);
       oscillator.start(now);oscillator.stop(now+duration+.02);
     }
+    function fadeOutAmbient(){
+      window.clearInterval(ambientFadeTimer);
+      stopAmbient(.85);
+    }
+    soundToggle.addEventListener('click',()=>{
+      window.clearInterval(ambientFadeTimer);
+      soundEnabled=!soundEnabled;updateSoundButton();
+      if(soundEnabled)startAmbient();else{stopAmbient(.12);stopWarpSound();}
+    });
     function startCountdown(){
       window.clearInterval(countdownTimer);
       let value=5;
@@ -165,13 +233,14 @@
     }
     async function begin(){
       if(button.disabled)return;button.disabled=true;
-      unlockAudio();
+      if(soundEnabled)unlockAudio();
       try{
         if(CONFIG.launchEndpoint){const response=await fetch(CONFIG.launchEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'launch'}),credentials:'same-origin'});if(!response.ok)throw new Error('Не удалось подтвердить запуск. Попробуйте ещё раз.');}
         stage.classList.add('launching');
         startCountdown();
-        presentationTimer=window.setTimeout(()=>{overlay.classList.add('active');overlay.setAttribute('aria-hidden','false');stage.style.visibility='hidden';playPresentation();},6600);
-      }catch(error){button.disabled=false;alert(error.message||'Не удалось запустить проект.');}
+        if(soundEnabled){prepareWarpSound().catch(()=>{});warpTimer=window.setTimeout(playWarpSound,5200);}
+        presentationTimer=window.setTimeout(()=>{if(soundEnabled)fadeOutAmbient();overlay.classList.add('active');overlay.setAttribute('aria-hidden','false');stage.style.visibility='hidden';playPresentation();},6600);
+      }catch(error){button.disabled=false;if(soundEnabled)startAmbient();alert(error.message||'Не удалось запустить проект.');}
     }
     function finishPresentation(){
       if(presentationFinished)return;presentationFinished=true;window.clearTimeout(demoTimer);bar.style.width='100%';
@@ -183,7 +252,7 @@
       presentationFinished=false;
       if(CONFIG.presentationVideo){video=document.createElement('video');video.src=CONFIG.presentationVideo;video.poster='https://assets.21st.dev/ascii-recipes/thumbnails/user_2nElBLvklOKlAURm6W1PTu6yYFh/f6c0f60d-9b9e-4f74-9c0a-aef9c5990ef8.jpg';video.autoplay=true;video.muted=true;video.playsInline=true;video.controls=false;video.addEventListener('ended',finishPresentation,{once:true});video.addEventListener('timeupdate',()=>{if(video.duration)bar.style.width=Math.min(video.currentTime/(CONFIG.demoVideoDurationMs/1000),1)*100+'%'});video.addEventListener('error',()=>{window.clearTimeout(demoTimer);frame.innerHTML='<div class="video-placeholder"><strong>Не удалось загрузить видео</strong>Проверьте подключение и обновите страницу.</div>';});frame.replaceChildren(video);video.play().catch(()=>{});if(!CONFIG.launchEndpoint)demoTimer=window.setTimeout(finishPresentation,CONFIG.demoVideoDurationMs);}
     }
-    function reset(){window.clearTimeout(demoTimer);window.clearTimeout(presentationTimer);window.clearInterval(countdownTimer);countdownDigit.textContent='5';stage.dataset.countdown='5';presentationFinished=false;if(video){video.pause();video.remove();video=null}bar.style.width='0';overlay.classList.remove('active');overlay.setAttribute('aria-hidden','true');stage.style.visibility='';stage.classList.remove('launching');button.disabled=false}
+    function reset(){window.clearTimeout(demoTimer);window.clearTimeout(presentationTimer);window.clearTimeout(warpTimer);window.clearInterval(countdownTimer);window.clearInterval(ambientFadeTimer);stopWarpSound();countdownDigit.textContent='5';stage.dataset.countdown='5';presentationFinished=false;if(video){video.pause();video.remove();video=null}bar.style.width='0';overlay.classList.remove('active');overlay.setAttribute('aria-hidden','true');stage.style.visibility='';stage.classList.remove('launching');button.disabled=false;if(soundEnabled)startAmbient();}
     button.addEventListener('click',begin);back.addEventListener('click',reset);document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!overlay.classList.contains('active'))begin()});
   </script>
 
