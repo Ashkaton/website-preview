@@ -29,7 +29,7 @@
     .ambient-video{display:none}
     .video-tint{display:none}
     header,main,footer{position:relative;z-index:1}
-    .overlay{padding:0}.video-shell{position:relative;width:100vw;height:100svh;text-align:center}.video-label{position:absolute;z-index:2;top:24px;left:50%;transform:translateX(-50%);margin:0;padding:9px 14px;border-radius:999px;background:rgba(0,0,0,.48);backdrop-filter:blur(12px);color:#fff;font-weight:500}.video-frame{position:absolute;inset:0;aspect-ratio:auto;width:100%;height:100%;border:0;background:#000;display:grid;place-items:center}.video-frame video{width:100%;height:100%;object-fit:cover;background:#000}.video-placeholder{position:relative;z-index:1}.progress{position:absolute;z-index:2;left:0;right:0;bottom:0;margin:0;height:3px;background:rgba(255,255,255,.2)}.progress i{background:#E62128}.back{position:absolute;z-index:2;right:24px;bottom:24px;margin:0;padding:10px 14px;border:1px solid rgba(255,255,255,.28);border-radius:14px;background:rgba(0,0,0,.45);backdrop-filter:blur(12px);color:#fff;text-decoration:none}.back:hover{background:rgba(0,0,0,.7)}
+    .overlay{padding:0}.video-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#07050b}.video-shell{position:relative;width:100vw;height:100svh;text-align:center}.video-label{position:absolute;z-index:2;top:24px;left:50%;transform:translateX(-50%);margin:0;padding:9px 14px;border-radius:999px;background:rgba(0,0,0,.48);backdrop-filter:blur(12px);color:#fff;font-weight:500}.video-frame{position:absolute;inset:0;aspect-ratio:auto;width:100%;height:100%;border:0;background:#000;display:grid;place-items:center}.video-frame video{width:100%;height:100%;object-fit:cover;background:#000}.video-placeholder{position:relative;z-index:1}.progress{position:absolute;z-index:2;left:0;right:0;bottom:0;margin:0;height:3px;background:rgba(255,255,255,.2)}.progress i{background:#E62128}.back{position:absolute;z-index:2;right:24px;bottom:24px;margin:0;padding:10px 14px;border:1px solid rgba(255,255,255,.28);border-radius:14px;background:rgba(0,0,0,.45);backdrop-filter:blur(12px);color:#fff;text-decoration:none}.back:hover{background:rgba(0,0,0,.7)}
     .starfield{position:absolute;inset:0;z-index:0;width:100%;height:100%;pointer-events:none}
     .zero-burst{position:absolute;inset:0;z-index:2;width:100%;height:100%;pointer-events:none}
     .stage:before{display:none}
@@ -60,7 +60,6 @@
     .stage.launching .foot>a,.stage.launching .foot .right>span,.stage.launching .background-picker{animation:warp-copy 1.15s 5.2s ease-in forwards}
     .stage.launching:after{animation-delay:5.2s}
     .launch{margin-top:34px}
-    .sound-toggle{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid rgba(255,255,255,.17);border-radius:50%;background:rgba(255,255,255,.045);color:#c7bec9;cursor:pointer;transition:color .2s,background .2s,border-color .2s}.sound-toggle:hover{color:#fff;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.35)}.sound-toggle svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.sound-toggle .sound-on{display:none}.sound-toggle[aria-pressed="true"] .sound-on{display:block}.sound-toggle[aria-pressed="true"] .sound-off{display:none}.sound-toggle:focus-visible{outline:2px solid #E62128;outline-offset:3px}
     @keyframes launch-glint{to{transform:translateX(120%);opacity:0}}
     /* Запуск под музыку: 0–6 с разгон звёзд (надписи плавно уходят), 6–16 с отсчёт 10…1, ~15.5 с — прыжок и вспышка, дальше видео. */
     .stage.launching .eyebrow,.stage.launching .launch{visibility:visible;animation:fade-away 1s ease forwards}
@@ -124,7 +123,7 @@
         </svg></div><div class="spec">EST. 2020<b>ДВИЖЕНИЕ · ЛЮДИ · АВТО</b></div>
       </section>
     </main>
-    <footer class="foot"><a href="https://cargasm.club">CARGASM CLUB</a><div class="right"><span>6.11</span><button class="sound-toggle" id="soundToggle" type="button" aria-label="Включить звук" aria-pressed="false" title="Включить звук"><svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m17 9 5 6m0-6-5 6"/></svg><svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7m3-10a9 9 0 0 1 0 13"/></svg></button></div></footer>
+    <footer class="foot"><a href="https://cargasm.club">CARGASM CLUB</a><div class="right"><span>6.11</span></div></footer>
   </div>
   <section class="overlay" id="presentation" aria-label="Видео-презентация" aria-hidden="true">
     <div class="video-shell"><div class="video-label">Cargasm · Официальный запуск</div>
@@ -136,81 +135,30 @@
     // Заполнить перед публикацией. Не помещайте секреты или токены в этот файл.
     const CONFIG = {
       launchEndpoint: "", // Защищённый endpoint, который активирует портал на cargasm.club
-      presentationVideo: "promo.mp4",                 // промо 1920×1080, без звука — музыку играет страница
-      presentationVideoVertical: "promo-vertical.mp4", // 1080×1920 — для вертикальных экранов
+      scene: "scene/scene.html",                      // промо живым HTML: кадры рисуются по часам музыки, под любой экран
       music: "music.mp3",                             // «The Mountain», 90 BPM (доля 2/3 с), дропы на 16.02 и 80.02 с
       destination: "https://cargasm.club/"
     };
-    const stage=document.getElementById('stage'), button=document.getElementById('launch'), countdown=document.getElementById('countdown'), countdownDigit=document.getElementById('countdownDigit'), overlay=document.getElementById('presentation'), frame=document.getElementById('videoFrame'), back=document.getElementById('back'), bar=document.getElementById('progressBar'), soundToggle=document.getElementById('soundToggle');
-    let video, ambientFadeTimer, audioContext, ambientBuffer, ambientSource, ambientGain, ambientLoad, soundEnabled=false, presentationFinished=false;
+    const stage=document.getElementById('stage'), button=document.getElementById('launch'), countdown=document.getElementById('countdown'), countdownDigit=document.getElementById('countdownDigit'), overlay=document.getElementById('presentation'), frame=document.getElementById('videoFrame'), back=document.getElementById('back'), bar=document.getElementById('progressBar');
+    let scene, audioContext, presentationFinished=false;
     function unlockAudio(){
       const AudioContextClass=window.AudioContext||window.webkitAudioContext;
       if(!AudioContextClass)return;
       if(!audioContext)audioContext=new AudioContextClass();
       if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
     }
-    async function prepareAmbient(){
-      if(ambientBuffer)return ambientBuffer;
-      if(!ambientLoad)ambientLoad=fetch('ambient-loop.wav').then(response=>{if(!response.ok)throw new Error('Не удалось загрузить фоновый звук');return response.arrayBuffer()}).then(data=>audioContext.decodeAudioData(data));
-      const decoded=await ambientLoad, crossfadeSeconds=2, samples=Math.min(Math.floor(decoded.sampleRate*crossfadeSeconds),decoded.length>>1), loopBuffer=audioContext.createBuffer(decoded.numberOfChannels,decoded.length,decoded.sampleRate);
-      for(let channel=0;channel<decoded.numberOfChannels;channel++){
-        const input=decoded.getChannelData(channel), output=loopBuffer.getChannelData(channel);
-        output.set(input);
-        for(let i=0;i<samples;i++){
-          const p=i/(samples-1), angle=p*Math.PI/2, tail=decoded.length-samples+i;
-          output[tail]=input[tail]*Math.cos(angle)+input[i]*Math.sin(angle);
-        }
-      }
-      ambientBuffer={buffer:loopBuffer,loopStart:samples/decoded.sampleRate};
-      return ambientBuffer;
-    }
-    async function startAmbient(){
-      if(!soundEnabled)return;
-      unlockAudio();
-      try{
-        const prepared=await prepareAmbient();
-        if(!soundEnabled||ambientSource||stage.classList.contains('launching'))return;
-        const source=audioContext.createBufferSource(), gain=audioContext.createGain();
-        source.buffer=prepared.buffer;source.loop=true;source.loopStart=prepared.loopStart;source.loopEnd=prepared.buffer.duration;
-        gain.gain.setValueAtTime(.0001,audioContext.currentTime);gain.gain.exponentialRampToValueAtTime(.68,audioContext.currentTime+.35);
-        source.connect(gain);gain.connect(audioContext.destination);source.start(0,prepared.loopStart);
-        ambientSource=source;ambientGain=gain;source.addEventListener('ended',()=>{if(ambientSource===source){ambientSource=null;ambientGain=null;}},{once:true});
-      }catch(error){soundEnabled=false;updateSoundButton();console.error(error);}
-    }
-    function stopAmbient(fadeDuration=0){
-      if(!ambientSource||!ambientGain)return;
-      const source=ambientSource,gain=ambientGain,now=audioContext.currentTime;
-      gain.gain.cancelScheduledValues(now);gain.gain.setValueAtTime(Math.max(gain.gain.value,.0001),now);
-      if(fadeDuration){gain.gain.linearRampToValueAtTime(.0001,now+fadeDuration);window.setTimeout(()=>{try{source.stop()}catch{}},fadeDuration*1000+30)}
-      else{gain.gain.setValueAtTime(.0001,now);try{source.stop(now+.02)}catch{}}
-      ambientSource=null;ambientGain=null;
-    }
-    function updateSoundButton(){
-      soundToggle.setAttribute('aria-pressed',String(soundEnabled));
-      const label=soundEnabled?'Выключить звук':'Включить звук';soundToggle.setAttribute('aria-label',label);soundToggle.title=label;
-    }
-    function fadeOutAmbient(){
-      window.clearInterval(ambientFadeTimer);
-      stopAmbient(.85);
-    }
-    soundToggle.addEventListener('click',()=>{
-      window.clearInterval(ambientFadeTimer);
-      soundEnabled=!soundEnabled;updateSoundButton();
-      if(musicGain)musicGain.gain.setTargetAtTime(soundEnabled?1:0,audioContext.currentTime,.05);
-      if(launchAt===null){if(soundEnabled)startAmbient();else stopAmbient(.12);}
-    });
     // Таймлайн запуска (секунды от нажатия) — по долям трека: 90 BPM, доля 2/3 с, такт 4 доли, дроп на 16.02.
     const DROP=16.02;
     // отсчёт 5…0 с 6-й секунды — на удары малого барабана (бэкбит каждые 2 доли, найдены в треке);
     // после «0» — пауза до дропа (16.02): звёзды вытягиваются, на дропе надписи улетают со вспышкой и проявляется видео
     const COUNTDOWN=[[5,6.025],[4,7.355],[3,8.69],[2,10.025],[1,11.355],[0,12.69]];
     const COUNT_AT=COUNTDOWN[0][1], WARP_AT=DROP;
-    // видео (promo.html?site) появляется на дропе, уже с 0.93 с ролика (карточки вылетают);
+    // сцена (scene/scene.html) появляется на дропе, уже с 0.93 с (карточки вылетают);
     // вспышка G (40.93 с ролика) — на сильную долю 56.02 с, логотип собран к 1:00 и держится до 1:10
     const VIDEO_AT=DROP, VIDEO_FROM=.93, VIDEO_LEN=54.913;
     // трек идёт целиком, без склеек: G — на сильную долю (15 тактов после дропа), затухание 1:00 → 1:10
     const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_AT=60;
-    let musicBuffer, musicSource, musicGain, launchAt=null, timelineFrame=0, lastDigit=null;
+    let musicBuffer, musicSource, launchAt=null, timelineFrame=0, lastDigit=null;
     const vertical=matchMedia('(max-aspect-ratio: 1/1)').matches;
     // музыка: скачиваем и склеиваем заранее, чтобы по нажатию стартовать без задержки
     const musicReady=fetch(CONFIG.music).then(r=>{if(!r.ok)throw new Error('Не удалось загрузить музыку');return r.arrayBuffer()}).then(async data=>{
@@ -222,15 +170,14 @@
     });
     musicReady.catch(console.error);
     // видео грузим сразу, показываем на VIDEO_AT
-    function prepareVideo(){
-      if(video)return;
-      video=document.createElement('video');video.src=vertical&&CONFIG.presentationVideoVertical?CONFIG.presentationVideoVertical:CONFIG.presentationVideo;
-      video.preload='auto';video.muted=true;video.playsInline=true;video.controls=false;
-      video.addEventListener('ended',finishPresentation);
-      video.addEventListener('error',()=>{frame.innerHTML='<div class="video-placeholder"><strong>Не удалось загрузить видео</strong>Проверьте подключение и обновите страницу.</div>';});
-      frame.replaceChildren(video);
+    // сцену грузим сразу (скрытой), чтобы к 16-й секунде карточки и фон были загружены
+    function prepareScene(){
+      if(scene)return;
+      scene=document.createElement('iframe');scene.src=CONFIG.scene+(vertical?'?vertical':'?horizontal');
+      scene.title='Cargasm — презентация';scene.setAttribute('aria-hidden','true');
+      frame.replaceChildren(scene);
     }
-    prepareVideo();
+    prepareScene();
     // время от нажатия — по аудио-часам, чтобы картинка не расходилась с музыкой
     const launchTime=()=>launchAt===null?null:(audioContext?audioContext.currentTime:performance.now()/1000)-launchAt;
     window.launchTime=launchTime;
@@ -283,11 +230,12 @@
       }else if(burst&&t>=DROP+.3){zctx.clearRect(0,0,zcan.width,zcan.height);}
       if(t>=WARP_AT&&!stage.classList.contains('warping'))stage.classList.add('warping');
       if(t>=VIDEO_AT){
-        if(!overlay.classList.contains('active')){overlay.classList.add('active');overlay.setAttribute('aria-hidden','false');video.currentTime=VIDEO_FROM;video.play().catch(()=>{});}
+        if(!overlay.classList.contains('active')){overlay.classList.add('active');overlay.setAttribute('aria-hidden','false');scene.contentWindow.fit?.();}
         if(t>=VIDEO_AT+.9&&stage.style.visibility!=='hidden')stage.style.visibility='hidden';  // после проявления видео (.8 с)
-        const vt=t-VIDEO_AT+VIDEO_FROM;
-        if(!presentationFinished&&video.readyState>0&&Math.abs(video.currentTime-vt)>.2&&vt<video.duration)video.currentTime=vt;
-        if(video.duration)bar.style.width=Math.min(video.currentTime/video.duration,1)*100+'%';
+        const vt=t-VIDEO_AT+VIDEO_FROM;   // время сцены — прямо от часов музыки
+        scene.contentWindow.render?.(Math.min(vt,VIDEO_LEN));
+        bar.style.width=Math.min(vt/VIDEO_LEN,1)*100+'%';
+        if(vt>=VIDEO_LEN)finishPresentation();
       }
       if(!presentationFinished)timelineFrame=requestAnimationFrame(timeline);
     }
@@ -297,30 +245,26 @@
       try{
         if(CONFIG.launchEndpoint){const response=await fetch(CONFIG.launchEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'launch'}),credentials:'same-origin'});if(!response.ok)throw new Error('Не удалось подтвердить запуск. Попробуйте ещё раз.');}
         await musicReady;
-        if(!soundEnabled){soundEnabled=true;updateSoundButton();}
-        fadeOutAmbient();
-        musicGain=audioContext.createGain();musicGain.connect(audioContext.destination);
-        musicSource=audioContext.createBufferSource();musicSource.buffer=musicBuffer;musicSource.connect(musicGain);
+        musicSource=audioContext.createBufferSource();musicSource.buffer=musicBuffer;musicSource.connect(audioContext.destination);
         launchAt=audioContext.currentTime+.05;musicSource.start(launchAt);
         stage.dataset.countdown='5';countdownDigit.textContent='5';lastDigit=null;
         stage.classList.add('launching');
         timelineFrame=requestAnimationFrame(timeline);
-      }catch(error){button.disabled=false;if(soundEnabled)startAmbient();alert(error.message||'Не удалось запустить проект.');}
+      }catch(error){button.disabled=false;alert(error.message||'Не удалось запустить проект.');}
     }
     function finishPresentation(){
       if(presentationFinished)return;presentationFinished=true;bar.style.width='100%';
       if(CONFIG.launchEndpoint){location.assign(CONFIG.destination);return;}
-      if(video)video.pause();
       frame.innerHTML='<div class="video-placeholder"><strong>Запуск готов</strong>В рабочей версии здесь откроется портал на cargasm.club.<br><a href="'+CONFIG.destination+'" style="display:inline-block;margin-top:18px;color:#fff">Открыть cargasm.club ↗</a></div>';
     }
     function reset(){
       cancelAnimationFrame(timelineFrame);
       if(musicSource){try{musicSource.stop()}catch{}musicSource=null;}
       launchAt=null;lastDigit=null;presentationFinished=false;
-      if(video){video.pause();video.remove();video=null}prepareVideo();
+      scene=null;prepareScene();
       countdownDigit.textContent='5';stage.dataset.countdown='5';bar.style.width='0';countdown.firstElementChild.style.cssText='';burst=null;zctx.clearRect(0,0,zcan.width,zcan.height);
       overlay.classList.remove('active');overlay.setAttribute('aria-hidden','true');stage.style.visibility='';
-      stage.classList.remove('launching','counting','warping');button.disabled=false;if(soundEnabled)startAmbient();
+      stage.classList.remove('launching','counting','warping');button.disabled=false;
     }
     button.addEventListener('click',begin);back.addEventListener('click',reset);document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!overlay.classList.contains('active'))begin()});
   </script>

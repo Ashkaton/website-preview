@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Cargasm Promo 30s</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: #07050b; }
+  body { font-family: 'Exo 2', system-ui, sans-serif; color: #fff; }
+
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #07050b; }
+  /* фон — зацикленное видео ребят (GOR_LOOP_1.mp4, 30 с) */
+  #bg { position: absolute; left: -40px; top: -40px; width: calc(100% + 80px); height: calc(100% + 80px);
+        object-fit: cover; will-change: transform, filter; }
+  #vignette { position: absolute; inset: 0;
+              background: radial-gradient(ellipse at 50% 50%, rgba(7,5,11,0) 35%, rgba(7,5,11,.8) 100%); }
+
+  /* карусель карточек: 3D-веер */
+  #deck { position: absolute; inset: 0; perspective: 1500px; perspective-origin: 50% 50%; }
+  .card { position: absolute; left: 50%; top: 521px; width: 377px; height: 608px; margin: -304px 0 0 -188.5px;
+          border-radius: 28px; overflow: hidden; will-change: transform, filter, opacity;
+          box-shadow: 0 30px 70px rgba(0,0,0,.5); }
+  .card img { display: block; width: 100%; height: 100%; }
+  .card i { position: absolute; inset: 0; background: linear-gradient(#2a2730, #141218); mix-blend-mode: multiply; }
+
+  /* заголовок: в 2 раза меньше, без свечения */
+  #headline { position: absolute; left: 0; right: 0; top: 120px; text-align: center;
+              font-weight: 500; font-size: 21px; line-height: 1.12; white-space: nowrap; text-transform: uppercase; letter-spacing: .3px; }
+  #corner { position: absolute; left: 50%; top: 44px; width: 420px; margin-left: -197px; }  /* -210 + 13: у Logo.png справа поле под тень плашки */
+
+  /* подписи снизу, без свечения */
+  #caption { position: absolute; left: 50%; top: 935px; width: 820px; margin-left: -410px; text-align: center;
+             font-weight: 600; font-size: 42px; line-height: 1.1; color: #FF4655; }
+  #caption.low { top: 920px; }
+
+  /* финал: логотип */
+  #outro { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  #lockup { position: absolute; left: 0; top: 50%; height: 96px; margin-top: -48px; display: flex; align-items: center; }
+  #mark { width: 600px; height: 87px; display: block; overflow: visible; }
+  /* плашка CLUB из Club.svg; размеры и отступ — по пропорциям Logo.png */
+  #plate { margin-left: 48px; width: 243px; height: 111px; flex: none; overflow: visible; transform-origin: 0 50%; }
+
+  /* вертикальная версия 1080×1920 (?vertical): всё то же, крупнее и по центру кадра */
+  html.v, .v body, .v #stage, .v #outro { width: 1080px; height: 1920px; }
+  .v .card { top: 960px; width: 547px; height: 882px; margin: -441px 0 0 -273.5px; border-radius: 40px; }
+  .v #deck { perspective: 1800px; }
+  .v #corner { top: 190px; width: 560px; margin-left: -263px; }  /* -280 + 17 */
+  .v #headline { top: 296px; }
+  .v #caption { top: 1480px; width: 920px; margin-left: -460px; font-size: 54px; }
+  .v #caption.low { top: 1462px; }
+</style>
+<script>
+  // сцена для страницы запуска: вертикальная раскладка на вертикальных экранах (можно задать ?vertical / ?horizontal)
+  const V = location.search.includes('vertical') || (!location.search.includes('horizontal') && innerWidth < innerHeight);
+  if (V) document.documentElement.classList.add('v');
+</script>
+</head>
+<body>
+<div id="stage">
+  <video id="bg" src="bg-loop.mp4" muted loop autoplay playsinline preload="auto"></video>
+  <div id="vignette"></div>
+  <div id="deck"></div>
+  <div id="headline"><span>Inkluzywna społeczność motoryzacyjna</span></div>
+  <img id="corner" src="Logo.png" alt="">
+  <div id="caption"></div>
+  <div id="outro"><div id="lockup">
+    <svg id="mark" viewBox="0 4 138 20">
+      <defs>
+        <filter id="neon" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation=".45" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="bloom" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="b"/></feMerge>
+        </filter>
+      </defs>
+      <!-- построение G: силуэт кольца (внешний и внутренний контур) + линии, по которым оно обрезается -->
+      <g id="sketch" fill="none" stroke="#ff5a3a" stroke-width=".3" stroke-linecap="round" filter="url(#neon)"></g>
+      <g id="letters"></g>
+      <path id="gGlow" fill="#fff" filter="url(#bloom)"/>
+      <path id="g" fill="#fff"/>
+      <path id="chev" fill="#E52329"/>
+      <!-- продолжения граней стрелки: точно по её сторонам, без поворота -->
+      <g id="chevLines" fill="none" stroke="#ff3a48" stroke-width=".24" stroke-linecap="round" filter="url(#neon)"></g>
+    </svg>
+    <svg id="plate" viewBox="85.7222 64.2915 329 150">
+      <defs>
+        <linearGradient id="plateGrad" x1="347.108" y1="46.9838" x2="198.092" y2="264.968" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#FF6C72"/><stop offset="1" stop-color="#E62128"/>
+        </linearGradient>
+        <clipPath id="plateClip"><path id="plateClipPath"/></clipPath>
+      </defs>
+      <path id="plateShape" fill="url(#plateGrad)"/>
+      <g clip-path="url(#plateClip)" fill="white">
+        <path d="M132.677 138.699C132.677 134.839 133.39 131.068 134.815 127.387C136.24 123.646 138.319 120.261 141.05 117.232C143.782 114.204 147.107 111.799 151.026 110.018C154.945 108.177 159.399 107.256 164.387 107.256C170.325 107.256 175.462 108.533 179.797 111.086C184.191 113.64 187.457 116.965 189.595 121.063L178.372 128.901C177.421 126.645 176.145 124.893 174.541 123.646C172.997 122.399 171.275 121.538 169.375 121.063C167.534 120.528 165.753 120.261 164.031 120.261C161.24 120.261 158.805 120.825 156.727 121.953C154.649 123.022 152.926 124.477 151.561 126.318C150.195 128.159 149.185 130.207 148.532 132.464C147.879 134.72 147.552 136.977 147.552 139.233C147.552 141.727 147.938 144.132 148.71 146.448C149.482 148.764 150.581 150.813 152.006 152.594C153.491 154.376 155.272 155.801 157.35 156.87C159.429 157.879 161.715 158.384 164.209 158.384C165.99 158.384 167.802 158.087 169.642 157.493C171.483 156.9 173.176 155.979 174.72 154.732C176.323 153.426 177.54 151.733 178.372 149.655L190.307 156.692C189.06 159.78 187.012 162.422 184.161 164.619C181.311 166.816 178.075 168.509 174.452 169.696C170.889 170.825 167.356 171.389 163.853 171.389C159.28 171.389 155.064 170.468 151.204 168.627C147.404 166.727 144.108 164.233 141.317 161.145C138.586 157.998 136.448 154.495 134.904 150.635C133.42 146.716 132.677 142.737 132.677 138.699Z"/>
+        <path d="M197.654 170.854V107.613H212.262V158.028H242.903V170.854H197.654Z"/>
+        <path d="M275.62 171.389C270.573 171.389 266.267 170.557 262.705 168.895C259.142 167.173 256.232 164.857 253.975 161.947C251.778 158.978 250.145 155.623 249.076 151.882C248.067 148.081 247.562 144.103 247.562 139.946V107.613H262.17V139.946C262.17 142.321 262.408 144.637 262.883 146.894C263.358 149.091 264.13 151.05 265.199 152.773C266.267 154.495 267.633 155.86 269.296 156.87C271.018 157.879 273.126 158.384 275.62 158.384C278.174 158.384 280.311 157.879 282.033 156.87C283.755 155.801 285.121 154.406 286.131 152.683C287.14 150.902 287.882 148.913 288.358 146.716C288.833 144.518 289.07 142.262 289.07 139.946V107.613H303.678V139.946C303.678 144.34 303.114 148.438 301.986 152.238C300.917 156.038 299.254 159.394 296.998 162.303C294.741 165.154 291.831 167.38 288.268 168.984C284.765 170.587 280.549 171.389 275.62 171.389Z"/>
+        <path d="M367.282 154.643C367.282 158.265 366.302 161.294 364.343 163.728C362.443 166.104 359.859 167.885 356.593 169.073C353.327 170.26 349.735 170.854 345.816 170.854H314.997V107.613H350.18C353.149 107.613 355.703 108.414 357.84 110.018C360.038 111.562 361.7 113.581 362.829 116.075C364.016 118.569 364.61 121.152 364.61 123.824C364.61 126.793 363.838 129.643 362.294 132.375C360.75 135.047 358.494 137.066 355.525 138.432C359.147 139.501 361.997 141.401 364.076 144.132C366.213 146.864 367.282 150.368 367.282 154.643ZM352.407 151.704C352.407 150.338 352.14 149.15 351.605 148.141C351.071 147.072 350.358 146.24 349.468 145.647C348.636 144.993 347.627 144.667 346.439 144.667H329.604V158.473H345.816C347.063 158.473 348.161 158.176 349.111 157.582C350.121 156.989 350.922 156.187 351.516 155.177C352.11 154.168 352.407 153.01 352.407 151.704ZM329.604 120.083V133.177H343.945C345.014 133.177 345.994 132.939 346.885 132.464C347.835 131.989 348.607 131.276 349.2 130.326C349.794 129.317 350.091 128.07 350.091 126.585C350.091 125.16 349.824 123.972 349.289 123.022C348.814 122.072 348.161 121.36 347.33 120.884C346.499 120.35 345.548 120.083 344.48 120.083H329.604Z"/>
+      </g>
+    </svg>
+  </div></div>
+</div>
+
+<script>
+const CARDS = [
+  ['1-blogi',       'Bądź na bieżąco z motoryzacją i bloguj'],
+  ['2-szoty',       'Dziel się przemyśleniami, opiniami i pytaniami na bieżąco'],
+  ['3-wydarzenia',  'Śledź eventy, twórz własne i zapraszaj znajomych'],
+  ['4-autostories', 'Dziel się historią życia swojego samochodu'],
+  ['5-warsztaty',   'Znajdź sprawdzone warsztaty w okolicy'],
+  ['6-zamowienia',  'Zamów naprawę i porównaj oferty warsztatów'],
+  ['7-crm',         'Zarządzaj zamówieniami swojego warsztatu i kontroluj postęp prac'],
+  ['8-cargasm-id',  'Zyskaj jedyny dostęp do wszystkich projektów Cargasm.club'],
+];
+const N = CARDS.length;
+const BG_LOOP = 30;    // длина видео-фона, с
+// ?site — версия для страницы запуска: карусель длиннее на 5 тактов музыки (13.33 с), чтобы логотип собрался к 1:00
+// от нажатия кнопки и держался до 1:10 (вспышка G — на 40.93 с ролика = 56.02 с от нажатия)
+const SITE = true;   // в сцене для сайта всегда длинная версия (до 1:10)
+const T0 = 1.2;       // карусель стартует
+const STEP = SITE ? 3.2 + 40 / 3 / 8 : 3.2;   // секунд на карточку
+const MOVE = .75;     // перелистывание
+const OUT0 = T0 + N * STEP - .6;   // 26.2 — уход карточек
+const OUT1 = OUT0 + 1;
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const easeOut = x => 1 - Math.pow(1 - x, 3);
+const ramp = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (arr, a) => { const i = Math.min(Math.floor(a), arr.length - 2); return arr[i] + (arr[i + 1] - arr[i]) * (a - i); };
+
+const L = OUT0 + .4;  // 26.6 — старт анимации логотипа
+const DURATION = SITE ? L + 1 + 13.98 : 34.5;  // обычная: 8 карточек × 3.2 с + финал; сайт: логотип держится до 1:10
+
+// логотип по буквам (из logo-white.svg): side — слева/справа от G, dist — очередь появления
+const LOGO = {"G":"M69.2914 20.3658C66.5259 20.2598 63.1092 18.894 63.1092 14C63.1092 9.52198 66.4497 7.68132 69.8723 7.68132C71.8163 7.68132 73.7604 8.2033 75.2116 9.19231V5.23626C73.4318 4.43956 71.3782 4 69.3247 4C64.0675 4 58.8925 7.02198 58.8925 14C58.8925 20.978 64.0401 24 69.4342 24C69.8684 24 70.3045 23.9765 70.7406 23.9372L69.2914 20.3658Z","chevron":"M73.6975 21.4046C73.8618 21.7892 74.1258 22.4447 74.1258 22.4447C74.1258 22.4447 74.4094 21.7892 74.5463 21.4046L76.4337 16.5243L75.2152 13.418H70.625L73.6995 21.4046H73.6975Z","letters":[{"n":"C","d":"M10.35 24C5.22976 24 0 20.9231 0 14.2198C0.027381 7.18681 5.175 4 10.2952 4C12.2119 4 14.1286 4.41209 15.7988 5.23626V9.19231C14.5393 8.2033 12.7595 7.68132 10.9798 7.68132C7.63929 7.68132 4.24405 9.6044 4.21667 14.2198C4.21667 18.4506 7.66667 20.3187 10.9798 20.3187C12.9512 20.3187 14.7583 19.7418 15.9357 18.7253V22.7637C14.2929 23.5604 12.3762 24 10.35 24Z","side":-1,"dist":3},{"n":"A","d":"M17.559 23.6154L25.3626 4.38462H29.8531L37.6566 23.6154H33.3852L31.9888 20.044H23.2269L21.8304 23.6154H17.559ZM24.5138 16.5824H30.7019L28.0185 9.74176C27.8816 9.35714 27.7721 8.97253 27.6078 8.31319C27.4435 8.97253 27.334 9.35714 27.1697 9.74176L24.5138 16.5824Z","side":-1,"dist":2},{"n":"R","d":"M40.3458 23.6154V4.38462H48.2315C51.9554 4.38462 55.8435 5.78571 55.8435 10.6483C55.8435 13.9451 53.9815 15.6209 51.6815 16.3626L57.3768 23.6154H52.6399L47.4649 16.8846H44.453V23.6154H40.3458ZM44.453 13.4506H48.3958C50.1482 13.4506 51.6268 12.6813 51.6268 10.7308C51.6268 8.78022 50.1482 8.01099 48.3958 8.01099H44.453V13.4506Z","side":-1,"dist":1},{"n":"A","d":"M77.6543 23.6154L85.4579 4.38462H89.9484L97.752 23.6154H93.4805L92.0841 20.044H83.3222L81.9258 23.6154H77.6543ZM84.6091 16.5824H90.7972L88.1139 9.74176C87.977 9.35714 87.8674 8.97253 87.7031 8.31319C87.5389 8.97253 87.4293 9.35714 87.2651 9.74176L84.6091 16.5824Z","side":1,"dist":1},{"n":"S","d":"M106.393 24C103.737 24 101.272 23.3681 99.3009 22.2692V18.3407C101.491 19.7967 103.901 20.3736 106.091 20.3736C108.282 20.3736 109.651 19.9066 109.651 18.533C109.651 14.9341 99.1914 16.2802 99.1914 9.46703C99.1914 5.75824 102.422 4 106.201 4C108.474 4 110.801 4.54945 112.416 5.48352V9.35714C110.801 8.2033 108.665 7.5989 106.53 7.62637C104.421 7.65385 103.408 8.23077 103.408 9.41209C103.408 12.7363 113.868 11.5 113.868 18.3407C113.868 22.6538 110.418 24 106.393 24Z","side":1,"dist":2},{"n":"M","d":"M117.273 23.6154V4.38462H121.079L127.65 14.3846L134.194 4.38462H138V23.6154H133.893V11.8022L128.827 19.4945H126.445L121.38 11.7747V23.6154H117.273Z","side":1,"dist":3}]};
+const SVGNS = 'http://www.w3.org/2000/svg';
+const svgEl = (tag, attrs, parent) => { const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+['g', 'gGlow'].forEach(id => $(id).setAttribute('d', LOGO.G));
+$('chev').setAttribute('d', LOGO.chevron);
+// вершины стрелки (из её контура) и грани, продлённые за вершины: [от, до, продлить назад, вперёд, тайминг]
+const P1 = [70.625, 13.418], P2 = [75.2152, 13.418], P3 = [76.4337, 16.5243], L4 = [73.6995, 21.4046], R4 = [74.5463, 21.4046];
+const CHEV_EDGES = [[P1, L4, 3, 3.5, [1.05, 1.3, 1.5, 1.8]],    // левая грань
+                    [P1, P2, 1.5, 6, [1.12, 1.37, 1.55, 1.85]], // верхняя
+                    [R4, P3, 2.5, 8, [1.08, 1.33, 1.52, 1.82]], // правая
+                    [P2, P3, 2, 3, [1.18, 1.4, 1.58, 1.88]]]; // короткая справа сверху
+const chevLines = CHEV_EDGES.map(([a, b, back, fwd]) => {
+  const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len;
+  return svgEl('path', { pathLength: 1, d: `M${a[0] - ux * back} ${a[1] - uy * back} L${b[0] + ux * fwd} ${b[1] + uy * fwd}` }, $('chevLines'));
+});
+const letters = LOGO.letters.map(l => {
+  const g = svgEl('g', {}, $('letters'));
+  return { ...l, g,
+    fill: svgEl('path', { d: l.d, fill: '#fff' }, g),
+    line: svgEl('path', { d: l.d, fill: 'none', stroke: '#ff5a3a', 'stroke-width': .3, pathLength: 1, filter: 'url(#neon)' }, g) };
+});
+// наброски: [начало прорисовки, конец, начало стирания, конец] от L
+// Кольцо G — два эллипса по контурам буквы. Каждый делится на «остаётся» (сама C) и «срезается» (проём справа).
+// Резы: вертикаль x = 75.21 (верхний край G) и диагональ вдоль левой грани стрелки (нижний край G).
+const ellipseArc = (cx, cy, rx, ry, a0, a1) => {
+  const p = a => `${cx + rx * Math.cos(a * Math.PI / 180)} ${cy + ry * Math.sin(a * Math.PI / 180)}`;
+  return `M${p(a0)} A${rx} ${ry} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${p(a1)}`;
+};
+const OUTER = [69.3, 14, 10.4, 10], INNER = [69.6, 14.02, 6.5, 6.35];
+const CUT_DIR = [73.6995 - 70.625, 21.4046 - 13.418];  // направление левой грани стрелки
+const cutK = CUT_DIR[0] / CUT_DIR[1];
+// [d, прорисовка от, до, стирание от, до] — секунды от L
+const SKETCH = [
+  [ellipseArc(...INNER, 92.7, 329.7),  0,   .22, null, null, 'keep'],   // внутренний контур C
+  [ellipseArc(...INNER, -30.3, 92.7),  .22, .32, .72, .9],              // его срезаемая часть
+  [`M75.21 2.5 L75.21 24.5`,           .15, .45, 1.0, 1.35],            // вертикальный рез
+  [ellipseArc(...OUTER, 82.1, 304.6),  .3,  .52, null, null, 'keep'],   // внешний контур C
+  [ellipseArc(...OUTER, -55.4, 82.1),  .52, .62, .7, .92],              // его срезаемая часть
+  [`M${69.29 + (9 - 20.37) * cutK} 9 L${69.29 + (25.5 - 20.37) * cutK} 25.5`, .45, .68, 1.0, 1.35], // диагональный рез
+];
+SKETCH.forEach(([d]) => svgEl('path', { d, pathLength: 1 }, $('sketch')));
+const sketchPaths = [...$('sketch').children];
+const plateLetters = [...document.querySelectorAll('#plate g path')];
+// подложка CLUB из club-bg.svg (сглаженные углы Figma); при ширине w правые углы сдвигаются на w − 329
+const plateD = w => { const r = x => x + w - 329;
+  return `M85.7222 138.292C85.7222 103.408 85.7222 85.9656 96.5592 75.1286C107.396 64.2915 124.838 64.2915 159.722 64.2915H${r(340.722)}` +
+    `C${r(375.606)} 64.2915 ${r(393.048)} 64.2915 ${r(403.885)} 75.1286C${r(414.722)} 85.9656 ${r(414.722)} 103.408 ${r(414.722)} 138.292V140.292` +
+    `C${r(414.722)} 175.175 ${r(414.722)} 192.617 ${r(403.885)} 203.454C${r(393.048)} 214.292 ${r(375.606)} 214.292 ${r(340.722)} 214.292H159.722` +
+    `C124.838 214.292 107.396 214.292 96.5592 203.454C85.7222 192.617 85.7222 175.175 85.7222 140.292V138.292Z`; };
+// значение по ключевым точкам [время, значение] с линейным переходом
+const keyframes = (t, kf) => {
+  if (t <= kf[0][0]) return kf[0][1];
+  for (let i = 1; i < kf.length; i++) if (t < kf[i][0])
+    return kf[i - 1][1] + (kf[i][1] - kf[i - 1][1]) * (t - kf[i - 1][0]) / (kf[i][0] - kf[i - 1][0]);
+  return kf[kf.length - 1][1];
+};
+// линия видна от «стёрто» до «нарисовано»
+function draw(el, t, a, b, c, d) {
+  const on = easeOut(ramp(t, a, b)), off = c == null ? 0 : ease(ramp(t, c, d));
+  el.setAttribute('stroke-dasharray', `${Math.max(0, on - off)} 2`);
+  el.setAttribute('stroke-dashoffset', -off);
+  el.style.visibility = on - off > .002 ? 'visible' : 'hidden';  // круглые концы не оставляют точек
+}
+
+// карточки
+const cards = CARDS.map(([file]) => {
+  const c = document.createElement('div');
+  c.className = 'card';
+  c.innerHTML = `<img src="cards/${file}.png"><i></i>`;
+  $('deck').appendChild(c);
+  return c;
+});
+
+// подписи: каждая буква отдельным span, раскладка не прыгает при печати
+const captions = CARDS.map(([, text]) => [...text].map(ch => `<span>${ch === ' ' ? ' ' : ch}</span>`).join(''));
+let shownCaption = -1;
+
+// веер для |d| = 0..3
+const SW = V ? 1080 : 1920, SH = V ? 1920 : 1080;   // размер кадра
+const X = V ? [0, 300, 490, 640] : [0, 330, 560, 760], Z = V ? [0, -230, -460, -690] : [0, -170, -340, -520];
+const RY = [0, 32, 40, 46], RZ = [0, 3, 6, 9];
+const BLUR = [0, 5, 8, 11], TINT = [0, 1, 1, 1];
+
+function carouselPos(t) {
+  if (t < T0) return 0;
+  const k = Math.floor((t - T0) / STEP), f = t - T0 - k * STEP;
+  return Math.min(N - 1, k + ease(clamp((f - (STEP - MOVE)) / MOVE)));
+}
+
+// надпись под логотипом: ширина = ширине логотипа (видимая часть Logo.png — пиксели 8…2416 из 2589)
+const LOGO_W = (V ? 560 : 420) * (2416 - 8) / 2589;
+function fitHeadline() {
+  // меряем саму строку в вёрстке (одинаково в любом браузере) и делаем буквы чуть уже логотипа (~1% с каждой стороны)
+  const sp = $('headline').firstChild;
+  sp.style.fontSize = '100px';
+  sp.style.fontSize = 100 * LOGO_W * .96 / sp.getBoundingClientRect().width * ($('stage').getBoundingClientRect().width / SW) + 'px';
+}
+
+function render(t) {
+  fitHeadline();  // каждый кадр: первый замер может прийтись на ещё не загруженный шрифт
+  // фон: проявление из размытия, медленный наезд, в финале снова размытие
+  const intro = easeOut(ramp(t, 0, 1.4));
+  const outro = ease(ramp(t, OUT0, OUT1 + .4));
+  const bt = t % BG_LOOP, bv = $('bg');
+  if (bv.paused ? Math.abs(bv.currentTime - bt) > .001 : Math.abs(bv.currentTime - bt) > .25) bv.currentTime = bt;
+  bv.style.transform = `scale(${1 + .06 * outro})`;
+  bv.style.filter = `blur(${14 * (1 - intro) + 9 * outro}px) brightness(${(.35 + .65 * intro) * (1 - .1 * outro)})`;
+
+  // карточки
+  const pos = carouselPos(t);
+  const appear = t => easeOut(clamp(t));
+  cards.forEach((c, i) => {
+    let d = ((i - pos) % N + N) % N;   // по кругу: слева и справа всегда есть карточки
+    if (d > N / 2) d -= N;
+    const a = Math.min(Math.abs(d), 3), sg = Math.sign(d);
+    const pop = appear((t - .2 - a * .15) / .9);           // появление из глубины
+    const leave = ease(ramp(t, OUT0 + (3 - a) * .03, OUT0 + .55)); // уход в глубину — до начала построения G
+    const z = lerp(Z, a) - 500 * (1 - pop) - 700 * leave;
+    c.style.transform = `translateX(${sg * lerp(X, a)}px) translateZ(${z}px) rotateY(${-sg * lerp(RY, a)}deg) rotateZ(${sg * lerp(RZ, a)}deg)`;
+    c.style.filter = `blur(${lerp(BLUR, a) + 10 * leave}px)`;
+    c.style.opacity = clamp(3.3 - Math.abs(d)) * pop * (1 - leave);
+    c.style.zIndex = 100 - Math.round(Math.abs(d) * 10);
+    c.lastChild.style.opacity = lerp(TINT, a) * .85;
+  });
+
+  // заголовок и логотип в углу
+  const ui = easeOut(ramp(t, .5, 1.3)) * (1 - ease(ramp(t, OUT0, OUT0 + .6)));
+  $('headline').style.opacity = ui;
+  $('headline').style.transform = `translateY(${(1 - ui) * -12}px)`;
+  $('corner').style.opacity = ui;
+
+  // подписи
+  let idx = -1, typeStart = 0, end = 0;
+  for (let i = 0; i < N; i++) {
+    const s = i === 0 ? T0 + .1 : T0 + i * STEP + .1;
+    const e = T0 + (i + 1) * STEP - MOVE;
+    if (t >= s - .01 && t < e + .3) { idx = i; typeStart = s; end = e; }
+  }
+  const cap = $('caption');
+  if (idx !== shownCaption) { cap.innerHTML = idx < 0 ? '' : captions[idx]; shownCaption = idx; }
+  if (idx < 0) cap.style.opacity = 0;
+  else {
+    const fade = 1 - ramp(t, end, end + .3);
+    const spans = cap.children, n = spans.length, per = Math.min(.035, 1.3 / n);
+    for (let j = 0; j < n; j++) spans[j].style.opacity = ramp(t, typeStart + j * per, typeStart + j * per + .1);
+    cap.style.opacity = fade;
+    const lines = Math.round(cap.offsetHeight / (V ? 59 : 46));
+    cap.classList.toggle('low', lines > 1);
+  }
+
+  // финал: неоновые наброски → вспышка G → буквы прорисовываются контуром → плашка CLUB
+  const W = 600, k = W / 138;                 // масштаб svg
+  const gC = 66 * k;                          // центр G со стрелкой в координатах #mark
+  const lt = t - L;
+  sketchPaths.forEach((el, i) => {
+    const [, a, b, c, d, keep] = SKETCH[i];
+    draw(el, lt, a, b, c, d);
+    if (keep) el.style.opacity = 1 - ramp(lt, 1.02, 1.15);  // контур C уходит под вспыхнувшую белую G
+  });
+
+  const flash = easeOut(ramp(lt, 1, 1.15));
+  $('g').style.opacity = flash;
+  $('gGlow').style.opacity = flash * (1 - ease(ramp(lt, 2.1, 3)));
+  chevLines.forEach((el, i) => draw(el, lt, ...CHEV_EDGES[i][4]));
+  $('chev').style.opacity = ease(ramp(lt, 1.45, 1.65));
+
+  letters.forEach(l => {
+    const s0 = 2.1 + (l.dist - 1) * .22;
+    const p = easeOut(ramp(lt, s0, s0 + .45));
+    l.g.setAttribute('transform', `translate(${-l.side * 5 * (1 - p)} 0)`);
+    draw(l.line, lt, s0, s0 + .35);
+    l.line.style.opacity = 1 - ramp(lt, s0 + .4, s0 + .7);
+    l.fill.style.opacity = ease(ramp(lt, s0 + .25, s0 + .5));
+  });
+
+  const open = ease(ramp(lt, 2.1, 3));        // G крупно → всё слово
+  const shift = ease(ramp(lt, 3.4, 3.95));    // слово → слово + плашка
+  const end2 = 1 - ease(ramp(t, DURATION - .6, DURATION));
+  const plateW = 48 + 243;
+  const focus = gC + (W / 2 - gC) * open + plateW / 2 * shift;
+  const lock = $('lockup');
+  lock.style.transform = `translateX(${SW / 2 - focus}px) scale(${1 + .7 * (1 - open)})`;
+  lock.style.transformOrigin = `${focus}px 50%`;
+  lock.style.opacity = (lt > -.1 ? 1 : 0) * end2;
+
+  // плашка: квадрат → растягивается вправо → буквы выезжают снизу по одной
+  $('plate').style.transform = `scale(${easeOut(ramp(lt, 3.5, 3.7))})`;
+  const pw = 150 + (329 - 150) * ease(ramp(lt, 3.7, 4));
+  $('plateShape').setAttribute('d', plateD(pw));
+  $('plateClipPath').setAttribute('d', plateD(pw));
+  // свечение включается, когда плашка собрана: как лампа позади — пара вспышек и ровный свет
+  const g = keyframes(lt, [[4.45, 0], [4.5, .7], [4.55, .15], [4.62, .9], [4.68, .45], [4.85, 1]]);
+  $('plate').style.filter = g > 0 ? `drop-shadow(0 18px 45px rgba(230,33,40,${.8 * g})) drop-shadow(0 6px 16px rgba(255,80,90,${.45 * g}))` : 'none';
+  plateLetters.forEach((el, j) => {
+    const q = easeOut(ramp(lt, 3.85 + j * .07, 4.15 + j * .07));
+    el.setAttribute('transform', `translate(0 ${110 * (1 - q)})`);
+  });
+}
+
+window.render = render;
+window.DURATION = DURATION;
+// для покадрового рендера: дождаться, пока видео-фон перемотается на нужный кадр
+window.bgSeeked = () => new Promise(r => { const v = $('bg');
+  if (!v.seeking && v.readyState >= 2) return r(); v.addEventListener('seeked', () => requestAnimationFrame(() => r()), { once: true }); });
+
+// Кадр вписывается в окно целиком (contain), а фон и виньетка растягиваются на всё окно —
+// так сцена подходит под любой экран без обрезки логотипа и подписей.
+function fit() {
+  const W = innerWidth, H = innerHeight, s = Math.min(W / SW, H / SH), ox = (W - SW * s) / 2, oy = (H - SH * s) / 2;
+  document.documentElement.style.cssText = document.body.style.cssText = 'width:100%; height:100%; overflow:hidden; margin:0';
+  $('stage').style.cssText = `position:absolute; left:${ox}px; top:${oy}px; transform:scale(${s}); transform-origin:0 0; overflow:visible`;
+  const box = (pad) => `left:${-ox / s - pad}px; top:${-oy / s - pad}px; width:${W / s + 2 * pad}px; height:${H / s + 2 * pad}px; right:auto; bottom:auto`;
+  $('bg').setAttribute('style', box(40));
+  $('vignette').setAttribute('style', box(0));
+}
+addEventListener('resize', fit); fit();
+// Страница запуска сама вызывает render(t) по часам музыки; открытая отдельно сцена проигрывается сама — для проверки.
+if (window.parent === window) {
+  const t0 = performance.now();
+  (function loop(now) { render(((now - t0) / 1000) % DURATION); requestAnimationFrame(loop); })(t0);
+} else render(0);
+</script>
+</body>
+</html>
