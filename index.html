@@ -126,9 +126,9 @@
     <footer class="foot"><a href="https://cargasm.club">CARGASM CLUB</a><div class="right"><span>6.11</span></div></footer>
   </div>
   <section class="overlay" id="presentation" aria-label="Видео-презентация" aria-hidden="true">
-    <div class="video-shell"><div class="video-label">Cargasm · Официальный запуск</div>
+    <div class="video-shell">
       <div class="video-frame" id="videoFrame"><div class="video-placeholder" id="placeholder"><strong>Ваша история начинается здесь</strong>Подключите видео-презентацию в настройках страницы, чтобы использовать автоматический переход после её завершения.</div></div>
-      <div class="progress"><i id="progressBar"></i></div><button class="back" id="back">Вернуться к экрану запуска</button>
+      <div class="progress"><i id="progressBar"></i></div>
     </div>
   </section>
   <script>
@@ -139,7 +139,7 @@
       music: "music.mp3",                             // «The Mountain», 90 BPM (доля 2/3 с), дропы на 16.02 и 80.02 с
       destination: "https://cargasm.club/"
     };
-    const stage=document.getElementById('stage'), button=document.getElementById('launch'), countdown=document.getElementById('countdown'), countdownDigit=document.getElementById('countdownDigit'), overlay=document.getElementById('presentation'), frame=document.getElementById('videoFrame'), back=document.getElementById('back'), bar=document.getElementById('progressBar');
+    const stage=document.getElementById('stage'), button=document.getElementById('launch'), countdown=document.getElementById('countdown'), countdownDigit=document.getElementById('countdownDigit'), overlay=document.getElementById('presentation'), frame=document.getElementById('videoFrame'), bar=document.getElementById('progressBar');
     let scene, audioContext, presentationFinished=false;
     function unlockAudio(){
       const AudioContextClass=window.AudioContext||window.webkitAudioContext;
@@ -257,16 +257,7 @@
       if(CONFIG.launchEndpoint){location.assign(CONFIG.destination);return;}
       frame.innerHTML='<div class="video-placeholder"><strong>Запуск готов</strong>В рабочей версии здесь откроется портал на cargasm.club.<br><a href="'+CONFIG.destination+'" style="display:inline-block;margin-top:18px;color:#fff">Открыть cargasm.club ↗</a></div>';
     }
-    function reset(){
-      cancelAnimationFrame(timelineFrame);
-      if(musicSource){try{musicSource.stop()}catch{}musicSource=null;}
-      launchAt=null;lastDigit=null;presentationFinished=false;
-      scene=null;prepareScene();
-      countdownDigit.textContent='5';stage.dataset.countdown='5';bar.style.width='0';countdown.firstElementChild.style.cssText='';burst=null;zctx.clearRect(0,0,zcan.width,zcan.height);
-      overlay.classList.remove('active');overlay.setAttribute('aria-hidden','true');stage.style.visibility='';
-      stage.classList.remove('launching','counting','warping');button.disabled=false;
-    }
-    button.addEventListener('click',begin);back.addEventListener('click',reset);document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!overlay.classList.contains('active'))begin()});
+    button.addEventListener('click',begin);document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!overlay.classList.contains('active'))begin()});
   </script>
 
   <script>
