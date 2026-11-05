@@ -122,7 +122,8 @@ const PARAMS = new URLSearchParams(location.search), param = (k, d) => PARAMS.ha
 const T0 = SITE ? param('t0', 1.2) : 1.2;          // карусель стартует
 const STEP = SITE ? param('step', 4.15) : 3.2;     // секунд на карточку
 const VIEWS = SITE ? param('views', N) : N;        // показов карточек (больше N — второй круг)
-const MOVE = .75;     // перелистывание
+const BEAT = SITE ? param('beat', 0) : 0;         // доля трека: если задана — все движения встают на доли
+const MOVE = BEAT ? 2 * BEAT : .75;               // перелистывание: 2 доли
 const OUT0 = T0 + VIEWS * STEP - .6 + (SITE ? param('gap', 0) : 0);   // уход карточек
 const OUT1 = OUT0 + 1;
 const $ = id => document.getElementById(id);
@@ -133,6 +134,19 @@ const ramp = (t, a, b) => clamp((t - a) / (b - a));
 const lerp = (arr, a) => { const i = Math.min(Math.floor(a), arr.length - 2); return arr[i] + (arr[i + 1] - arr[i]) * (a - i); };
 
 const L = OUT0 + .4;  // 26.6 — старт анимации логотипа
+const GT = L + 1;     // вспышка G
+// по долям: после вспышки G события логотипа встают на доли — буквы через 3, плашка через 6, «свет» через 9, полное свечение через 10
+const LOGO_BEATS = [[0, 0], [3, 1.1], [6, 2.4], [9, 3.45], [10, 3.85]];
+function logoTime(lt) {   // реальное время после старта логотипа → время анимации (вспышка на lt = 1)
+  if (!BEAT || lt <= 1) return lt;
+  const u = lt - 1;
+  for (let i = 1; i < LOGO_BEATS.length; i++) {
+    const [b0, o0] = LOGO_BEATS[i - 1], [b1, o1] = LOGO_BEATS[i];
+    if (u <= b1 * BEAT) return 1 + o0 + (o1 - o0) * (u - b0 * BEAT) / ((b1 - b0) * BEAT);
+  }
+  const [bl, ol] = LOGO_BEATS[LOGO_BEATS.length - 1];
+  return 1 + ol + (u - bl * BEAT);
+}
 const DURATION = SITE ? L + 1 + param('hold', 14.4) : 34.5;  // обычная: 8 карточек × 3.2 с + финал
 
 // логотип по буквам (из logo-white.svg): side — слева/справа от G, dist — очередь появления
@@ -252,9 +266,11 @@ function render(t) {
     let d = ((i - pos) % N + N) % N;   // по кругу: слева и справа всегда есть карточки
     if (d > N / 2) d -= N;
     const a = Math.min(Math.abs(d), 3), sg = Math.sign(d);
-    const pop = appear((t - .2 - a * .15) / .9);           // появление из глубины
-    const leave = ease(ramp(t, OUT0 + (3 - a) * .03, OUT0 + .55)); // уход в глубину — до начала построения G
-    const g = SITE ? 1 - ease(ramp(t, OUT0 - .8, OUT0 + .1)) : 1;     // на сайте перед уходом карточки собираются в одну по центру
+    const pop = BEAT ? appear((t - a * BEAT / 2) / (2 * BEAT))   // вылет на дропе: центральная за 2 доли, боковые с отставанием в полдоли
+                     : appear((t - .2 - a * .15) / .9);           // появление из глубины
+    // перед G карточки собираются в одну по центру и уходят в глубину; по долям: сборка за такт до G (2 доли), уход — следующие 1.5 доли
+    const leave = BEAT ? ease(ramp(t, GT - 2 * BEAT + (3 - a) * .03, GT - .5 * BEAT)) : ease(ramp(t, OUT0 + (3 - a) * .03, OUT0 + .55));
+    const g = !SITE ? 1 : BEAT ? 1 - ease(ramp(t, GT - 4 * BEAT, GT - 2 * BEAT)) : 1 - ease(ramp(t, OUT0 - .8, OUT0 + .1));
     const z = lerp(Z, a) * g - 500 * (1 - pop) - 700 * leave;
     c.style.transform = `translateX(${sg * lerp(X, a) * g}px) translateZ(${z}px) rotateY(${-sg * lerp(RY, a) * g}deg) rotateZ(${sg * lerp(RZ, a) * g}deg)`;
     c.style.filter = `blur(${lerp(BLUR, a) * g + 10 * leave}px)`;
@@ -272,7 +288,7 @@ function render(t) {
   // подписи
   let idx = -1, typeStart = 0, end = 0;
   for (let i = 0; i < VIEWS; i++) {
-    const s = i === 0 ? T0 + .1 : T0 + i * STEP + .1;
+    const s = BEAT ? (i === 0 ? T0 + 2 * BEAT : T0 + i * STEP) : (i === 0 ? T0 + .1 : T0 + i * STEP + .1);   // по долям: печать — с момента, когда карточка встала
     const e = Math.min(T0 + (i + 1) * STEP - MOVE, OUT0 - .3);   // последняя подпись уходит вместе с карточками
     if (t >= s - .01 && t < e + .3) { idx = i; typeStart = s; end = e; }
   }
@@ -291,7 +307,7 @@ function render(t) {
   // финал: неоновые наброски → вспышка G → буквы прорисовываются контуром → плашка CLUB
   const W = 600, k = W / 138;                 // масштаб svg
   const gC = 66 * k;                          // центр G со стрелкой в координатах #mark
-  const lt = t - L;
+  const lt = logoTime(t - L);
   sketchPaths.forEach((el, i) => {
     const [, a, b, c, d, keep] = SKETCH[i];
     draw(el, lt, a, b, c, d);

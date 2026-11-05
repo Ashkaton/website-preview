@@ -158,7 +158,7 @@
     // сцена стартует на дропе. Карусель в ритм: каждая карточка встаёт на сильную долю, смена — каждые 3 такта, 8 карточек = 24 такта.
     // Перед концом карусели карточки собираются в одну и исчезают; вспышка G — ровно когда музыка затихает (24 такта после дропа, 48.23 с),
     // логотип собирается в тишине и держится до конца — 31 такт после дропа (58.89 с), затухание с 27-го такта
-    const SCENE={t0:0,step:3*BAR,views:8,gap:-.8,hold:7*BAR};   // G в сцене = t0 + views × step + .8 + gap = 24 такта
+    const SCENE={t0:0,step:3*BAR,views:8,gap:-.8,hold:7*BAR,beat:BAR/4};   // beat — всё движение в сцене встаёт на доли   // G в сцене = t0 + views × step + .8 + gap = 24 такта
     const VIDEO_AT=DROP, VIDEO_FROM=0, VIDEO_LEN=SCENE.t0+SCENE.views*SCENE.step+.8+SCENE.gap+SCENE.hold;
     const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_AT=DROP+27*BAR;
     let musicBuffer, musicSource, launchAt=null, timelineFrame=0, lastDigit=null;
