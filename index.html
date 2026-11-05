@@ -179,10 +179,9 @@
     // время от нажатия — по аудио-часам, чтобы картинка не расходилась с музыкой
     const launchTime=()=>launchAt===null?null:(audioContext?audioContext.currentTime:performance.now()/1000)-launchAt;
     window.launchTime=launchTime;
-    // «0»: растёт и вращается — мы в него влетаем; ближе к дропу плавно исчезает
+    // «0»: растёт — мы в него влетаем; ближе к дропу плавно исчезает
     const ZERO_AT=COUNTDOWN[COUNTDOWN.length-1][1], FADE_START=ZERO_AT+(DROP-ZERO_AT)*.35, FADE_LEN=1.4;
     const zeroScale=p=>Math.pow(40,Math.pow(p,2.4));
-    const zeroTurn=p=>Math.PI*2*1.25*Math.pow(p,2);   // вращение по кругу, всё быстрее: 1¼ оборота до дропа
     function timeline(){
       const t=launchTime();if(t===null)return;
       if(t>=COUNT_AT){
@@ -193,10 +192,10 @@
           if(digit<5)countdownDigit.animate([{opacity:.35,transform:'scale(.78)',filter:'blur(5px)'},{opacity:1,transform:'scale(1.1)',filter:'blur(0)',offset:.68},{opacity:1,transform:'scale(1)',filter:'blur(0)'}],{duration:600,easing:'cubic-bezier(.2,.72,.24,1)'});
         }
       }
-      // после «0» — влёт в него: ноль растёт и вращается вместе с разгоном звёзд, потом плавно исчезает
+      // после «0» — влёт в него: ноль растёт вместе с разгоном звёзд, потом плавно исчезает
       if(t>=ZERO_AT&&t<DROP+.3){
         const p=Math.min(1,(t-ZERO_AT)/(DROP-ZERO_AT)), win=countdown.firstElementChild, S=zeroScale(p);
-        win.style.transform=`scale(${S}) rotate(${zeroTurn(p)}rad)`;
+        win.style.transform=`scale(${S})`;
         const f=Math.min(1,Math.max(0,(t-FADE_START)/FADE_LEN));
         win.style.opacity=1-f*f*(3-2*f);   // плавное исчезновение
       }
