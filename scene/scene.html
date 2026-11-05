@@ -46,6 +46,29 @@
   html.v, .v body, .v #stage, .v #outro { width: 1080px; height: 1920px; }
   .v .card { top: 960px; width: 547px; height: 882px; margin: -441px 0 0 -273.5px; border-radius: 40px; }
   .v #deck { perspective: 1800px; }
+  /* бенто-плитки: о каждом разделе — иконка, название, описание; у Blogi и Cargasm ID — картинка */
+  #bento { position: absolute; left: 50%; top: 521px; width: 0; height: 0; }
+  .v #bento { top: 960px; }
+  .tile { position: absolute; box-sizing: border-box; padding: 22px; border-radius: 26px; overflow: hidden; color: #fff;
+          background: linear-gradient(160deg, rgba(34,29,42,.94), rgba(15,13,20,.94)); border: 1px solid rgba(255,255,255,.1);
+          box-shadow: 0 24px 60px rgba(0,0,0,.45); display: flex; flex-direction: column; justify-content: flex-end; opacity: 0; }
+  .tile::after { content: ""; position: absolute; right: -60px; top: -60px; width: 200px; height: 200px; pointer-events: none;
+                 background: radial-gradient(circle, rgba(230,33,40,.22), transparent 70%); }
+  .tile .ic { position: absolute; left: 22px; top: 22px; width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center;
+              background: rgba(230,33,40,.14); border: 1px solid rgba(230,33,40,.28); z-index: 1; }
+  .tile .ic svg { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .tile .ic svg .accent { stroke: #E62128; }
+  .tile b { position: relative; z-index: 1; font-weight: 700; font-size: 24px; letter-spacing: -.3px; line-height: 1.1; }
+  .tile b em { font-style: normal; color: #E62128; }
+  .tile p { position: relative; z-index: 1; margin: 8px 0 0; font-size: 15px; line-height: 1.3; font-weight: 500; color: rgba(255,255,255,.62); }
+  .tile.big b { font-size: 34px; } .tile.big p { font-size: 18px; }
+  .tile .chips { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; max-width: 92%; }
+  .tile .chips span { font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 20px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.8); }
+  .v .tile .chips span { font-size: 14px; }
+  .tile .ph { position: absolute; left: 0; top: 0; right: 0; overflow: hidden; }
+  .tile .ph img { position: absolute; display: block; max-width: none; }
+  .tile .ph::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(15,13,20,.96)); }
+  .v .tile b { font-size: 28px; } .v .tile p { font-size: 17px; } .v .tile.big b { font-size: 40px; } .v .tile.big p { font-size: 21px; }
   .v #corner { top: 190px; width: 560px; margin-left: -263px; }  /* -280 + 17 */
   .v #headline { top: 296px; }
   .v #caption { top: 1480px; width: 920px; margin-left: -460px; font-size: 54px; }
@@ -62,6 +85,7 @@
   <video id="bg" src="bg-loop.mp4" muted loop autoplay playsinline preload="auto"></video>
   <div id="vignette"></div>
   <div id="deck"></div>
+  <div id="bento"></div>
   <div id="headline"><span>Inkluzywna społeczność motoryzacyjna</span></div>
   <img id="corner" src="Logo.png" alt="">
   <div id="caption"></div>
@@ -135,22 +159,46 @@ const lerp = (arr, a) => { const i = Math.min(Math.floor(a), arr.length - 2); re
 
 const L = OUT0 + .4;  // 26.6 — старт анимации логотипа
 const GT = L + 1;     // вспышка G
-// «стена»: после круга карточек (если до G остаётся время) все карточки выстраиваются сеткой 4×2, подсветка бежит по долям,
-// за такт до сборки — ускорение (подсветка каждые полдоли); затем сетка схлопывается в одну карточку
+// «стена»: после круга карточек (если до G остаётся время) карточки влетают в бенто-плитки о каждом разделе;
+// плитки стоят спокойно, перед G съезжаются к центру и уходят
 const WALL = SITE && BEAT && param('wall', 0) ? T0 + VIEWS * STEP : Infinity;   // старт стены
-const ACCEL = GT - 8 * BEAT;                                                 // ускорение — такт до сборки
 const SLOGAN = 'Wszystko w jednym miejscu';
 // бенто: [колонка, строка, ширина, высота] в ячейках; карточки по порядку CARDS
 // горизонталь — 6×2 ячеек (большая Blogi 2×2, широкая Cargasm ID), вертикаль — 4×3
 const BENTO = V
   ? { cols: 4, rows: 3, W: 960, H: 940, tiles: [[0,0,2,2],[2,0,1,1],[3,0,1,1],[2,1,1,1],[3,1,1,1],[0,2,1,1],[1,2,1,1],[2,2,2,1]] }
   : { cols: 6, rows: 2, W: 1100, H: 640, tiles: [[0,0,2,2],[2,0,1,1],[3,0,1,1],[4,0,1,1],[5,0,1,1],[2,1,1,1],[3,1,1,1],[4,1,2,1]] };
-function bentoTile(i) {   // центр плитки (от центра карусели), её размер, масштаб карточки и обрезка (сверху — заголовок всегда виден)
-  const gap = 16, cw0 = V ? 547 : 377, ch0 = V ? 882 : 608;
+function bentoRect(i) {   // плитка: центр (от центра карусели) и размер
+  const gap = 16;
   const cellW = (BENTO.W - gap * (BENTO.cols - 1)) / BENTO.cols, cellH = (BENTO.H - gap * (BENTO.rows - 1)) / BENTO.rows;
   const [c, r, w, h] = BENTO.tiles[i];
   const tw = w * cellW + (w - 1) * gap, th = h * cellH + (h - 1) * gap;
-  const cx = -BENTO.W / 2 + c * (cellW + gap) + tw / 2, cy = -BENTO.H / 2 + r * (cellH + gap) + th / 2;
+  return { cx: -BENTO.W / 2 + c * (cellW + gap) + tw / 2, cy: -BENTO.H / 2 + r * (cellH + gap) + th / 2, tw, th };
+}
+// содержимое плиток: иконки — как в блоке возможностей на сайте; фото — фрагменты картинок карточек [x, y, ширина, высота] в px PNG
+const ICONS = [`<svg viewBox="0 0 32 32"><path d="M7 7h18M7 15h18M7 23h18"/><path class="accent" d="M10 5v4M21 13v4M14 21v4"/></svg>`, `<svg viewBox="0 0 32 32"><rect x="7" y="5" width="18" height="7" rx="2"/><rect x="7" y="15" width="18" height="6" rx="2"/><rect x="7" y="24" width="18" height="4" rx="1"/><path class="accent" d="M22 5h3v7h-3"/></svg>`, `<svg viewBox="0 0 32 32"><path d="M8 6h16l-6 14v7h-4v-7z"/><path class="accent" d="M18 24h8"/></svg>`, `<svg viewBox="0 0 32 32"><rect x="7" y="5" width="18" height="22" rx="4"/><path class="accent" d="m16 8 1.7 4 4.3.4-3.2 2.8.9 4.2-3.7-2.2-3.7 2.2.9-4.2-3.2-2.8 4.3-.4z"/></svg>`, `<svg viewBox="0 0 32 32"><path d="M8 25V9a4 4 0 0 1 8 0v14a4 4 0 0 1-8 0zm8-8h5a4 4 0 1 0 0-8h-2"/><path class="accent" d="M21 20c3 0 5 2 5 5"/></svg>`, `<svg viewBox="0 0 32 32"><path d="M8 5h16v22H8zM11 10h10M11 15h10"/><path class="accent" d="m12 21 3 3 6-7"/></svg>`, `<svg viewBox="0 0 32 32"><path d="M7 5v22M16 5v22M25 5v22"/><path class="accent" d="M5 10h4M14 19h4M23 13h4"/></svg>`, `<svg viewBox="0 0 32 32"><path d="M8 6v20M16 6v20M24 6v20"/><path class="accent" d="M8 14v4M16 10v4M24 19v4"/></svg>`];
+const ID_ICON = `<svg viewBox="0 0 32 32"><rect x="5" y="8" width="22" height="16" rx="3"/><circle class="accent" cx="11.5" cy="14.5" r="2.5"/><path d="M8 20.5c.8-1.6 2-2.4 3.5-2.4s2.7.8 3.5 2.4M18 13h6M18 17h4"/></svg>`;
+const TILES = [
+  { t: 'Blogi', photo: [100, 760, 600, 460] }, { t: 'Szoty' }, { t: 'Wydarzenia' }, { t: 'Autostories' },
+  { t: 'Warsztaty' }, { t: 'Zamówienia' }, { t: 'CRM' }, { t: 'Cargasm <em>ID</em>', chips: true },
+];
+const tiles = TILES.map((d, i) => {
+  const r = bentoRect(i), el = document.createElement('div');
+  el.className = 'tile' + (BENTO.tiles[i][2] * BENTO.tiles[i][3] >= 4 ? ' big' : '');
+  Object.assign(el.style, { left: r.cx - r.tw / 2 + 'px', top: r.cy - r.th / 2 + 'px', width: r.tw + 'px', height: r.th + 'px' });
+  let html = '';
+  if (d.photo) {   // фото сверху плитки, затемняется к тексту
+    const [px, py, pw, ph] = d.photo, boxH = r.th * (BENTO.tiles[i][3] > 1 ? .62 : .72), sc = Math.max(r.tw / pw, boxH / ph);
+    html += `<div class="ph" style="height:${boxH}px"><img src="cards/${CARDS[i][0]}.png" style="width:${980 * sc}px;left:${-px * sc + (r.tw - pw * sc) / 2}px;top:${-py * sc + (boxH - ph * sc) / 2}px"></div>`;
+  } else html += `<div class="ic">${i === 7 ? ID_ICON : ICONS[i]}</div>`;
+  if (d.chips) html += `<div class="chips">${TILES.slice(0, 7).map(x => `<span>✓ ${x.t}</span>`).join('')}</div>`;   // один доступ ко всем разделам
+  html += `<b>${d.t}</b><p>${CARDS[i][1]}</p>`;
+  el.innerHTML = html;
+  $('bento').appendChild(el);
+  return el;
+});
+function bentoTile(i) {   // куда летит карточка: в плитку (масштаб, обрезка — заголовок сверху)
+  const { cx, cy, tw, th } = bentoRect(i), cw0 = V ? 547 : 377, ch0 = V ? 882 : 608;
   const s = Math.max(tw / cw0, th / ch0), vw = tw / s, vh = th / s;     // заполнить плитку, лишнее обрезать
   return { cx, cy: cy + (ch0 - vh) / 2 * s, s, cut: { side: (cw0 - vw) / 2, bottom: ch0 - vh } };
 }
@@ -287,7 +335,17 @@ function render(t, bass = 0) {   // bass — громкость баса тре�
   bv.style.transform = `scale(${1 + .06 * outro})`;
   const hit = beatHits(t);   // удар фона на приземлении карточки и лёгкий пульс на каждый такт
   bv.style.filter = `blur(${14 * (1 - intro) + 9 * outro}px) brightness(${(.35 + .65 * intro) * (1 - .1 * outro) })`;
-  $('deck').style.transform = `scale(${1 + .025 * bass})`;   // карусель «качается» вперёд на каждую ноту баса
+  const calm = ramp(t, WALL, WALL + 2 * BEAT);
+  $('deck').style.transform = `scale(${1 + .025 * bass * (1 - calm)})`;   // карусель «качается» на басе; бенто — в покое
+  // бенто: плитки проявляются по очереди (полдоли), стоят спокойно; перед G съезжаются к центру и уходят в глубину
+  const gt = ease(ramp(t, GT - 4 * BEAT, GT - 2 * BEAT)), gl = ease(ramp(t, GT - 2 * BEAT, GT - .5 * BEAT));
+  tiles.forEach((el, i) => {
+    if (WALL === Infinity) return;
+    const r = bentoRect(i), ap = easeOut(ramp(t, WALL + BEAT + i * BEAT / 2, WALL + BEAT + i * BEAT / 2 + 2 * BEAT));
+    el.style.opacity = ap * (1 - gl);
+    el.style.transform = `translate(${-r.cx * gt}px, ${-r.cy * gt + 24 * (1 - ap)}px) scale(${(.95 + .05 * ap) * (1 - .45 * gt) * (1 - .3 * gl)})`;
+    el.style.filter = gl > 0 ? `blur(${8 * gl}px)` : '';
+  });
 
   // карточки
   const pos = carouselPos(t);
@@ -305,20 +363,14 @@ function render(t, bass = 0) {   // bass — громкость баса тре�
     // карусель → стена (w) → одна карточка по центру (g)
     const w = ease(ramp(t, WALL, WALL + 2 * BEAT));
     const bt = bentoTile(i);
-    // подсветка по долям: какая карточка «звучит» сейчас (в ускорении — каждые полдоли)
-    let hl = 0;
-    if (t >= WALL + 2 * BEAT && t < GT - 4 * BEAT) {
-      const unit = t >= ACCEL ? BEAT / 2 : BEAT, k = Math.floor((t - WALL - 2 * BEAT) / unit), ph = (t - WALL - 2 * BEAT) / unit - k;
-      if (k % N === i) hl = Math.pow(1 - ph, 2);
-    }
     const x = (sg * lerp(X, a) * (1 - w) + bt.cx * w) * g, y = bt.cy * w * g;
     const z = (lerp(Z, a) * (1 - w)) * g - 500 * (1 - pop) - 700 * leave;
-    const sc = 1 + ((punch * (1 - w) + bt.s * w * (1 + .06 * hl)) - 1) * g;   // в стене — подёргивание плитки на её долю
+    const sc = 1 + ((punch * (1 - w) + bt.s * w) - 1) * g;
     const cut = w * g, rr = (V ? 40 : 28) / Math.max(.2, 1 + (bt.s - 1) * cut);
     c.style.clipPath = cut > .001 ? `inset(0 ${bt.cut.side * cut}px ${bt.cut.bottom * cut}px ${bt.cut.side * cut}px round ${rr}px)` : '';
     c.style.transform = `translateX(${x}px) translateY(${y}px) translateZ(${z}px) rotateY(${-sg * lerp(RY, a) * (1 - w) * g}deg) rotateZ(${sg * lerp(RZ, a) * (1 - w) * g}deg) scale(${sc})`;
     c.style.filter = `blur(${lerp(BLUR, a) * (1 - w) * g + 10 * leave}px)`;
-    c.style.opacity = (clamp(3.3 - Math.abs(d)) * (1 - w) + w) * pop * (1 - leave);
+    c.style.opacity = (clamp(3.3 - Math.abs(d)) * (1 - w) + w) * pop * (1 - leave) * (1 - ramp(t, WALL + BEAT, WALL + 2.5 * BEAT));   // карточка влетает в плитку и растворяется в ней
     c.style.zIndex = w > .5 ? 100 - i : 100 - Math.round(Math.abs(d) * 10);
     c.lastChild.style.opacity = lerp(TINT, a) * .85 * (1 - w);
   });
