@@ -139,7 +139,7 @@
     const CONFIG = {
       launchEndpoint: "", // Защищённый endpoint, который активирует портал на cargasm.club
       scene: "scene/scene.html",                      // промо живым HTML: кадры рисуются по часам музыки, под любой экран
-      music: "music-liquid-art-cut.mp3",              // «Liquid Art» (Coma-Media), обрезанный под ролик: 150 BPM, такт 1.6 с; дроп 12.86, тишина с 38.4, конец ~51 с
+      music: "music-liquid-art-cut.mp3",              // «Liquid Art» (Coma-Media), обрезанный под ролик: 150 BPM, такт 1.6 с; дроп 12.86, тишина с 38.4, конец ~50.1 с
       destination: "https://cargasm.club/"
     };
     const stage=document.getElementById('stage'), button=document.getElementById('launch'), countdown=document.getElementById('countdown'), countdownDigit=document.getElementById('countdownDigit'), overlay=document.getElementById('presentation'), frame=document.getElementById('videoFrame'), bar=document.getElementById('progressBar');
@@ -157,8 +157,8 @@
     const COUNT_AT=COUNTDOWN[0][1], WARP_AT=DROP;
     // сцена стартует на дропе. Карусель в ритм: 8 карточек, смена каждые 2 такта на сильную долю — вся громкая часть (16 тактов);
     // перед её концом карточки собираются в одну и уходят — к затиханию (16 тактов после дропа, 38.39 с) их уже нет; с затихания рисуется G,
-    // вспышка на 3-й доле, логотип собирается в тишине и держится до конца трека (24 такта после дропа, ~51 с)
-    const SCENE={t0:0,step:2*BAR,views:8,gap:-.8,hold:8*BAR,beat:BAR/4};   // G в сцене = t0 + views × step + .8 + gap = 16 тактов
+    // вспышка на 3-й доле, логотип собирается в тишине и держится до конца трека (23.5 такта после дропа, ~50.4 с)
+    const SCENE={t0:0,step:2*BAR,views:8,gap:-.8,hold:7.5*BAR,beat:BAR/4};   // G в сцене = t0 + views × step + .8 + gap = 16 тактов
     const VIDEO_AT=DROP, VIDEO_FROM=0, VIDEO_LEN=SCENE.t0+SCENE.views*SCENE.step+.8+SCENE.gap+SCENE.hold;
     const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_IN=2, FADE_AT=MUSIC_LEN-3;   // плавное нарастание в начале и затухание в конце
     let musicBuffer, musicSource, launchAt=null, timelineFrame=0, lastDigit=null;
