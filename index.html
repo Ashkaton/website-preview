@@ -62,7 +62,8 @@
     @keyframes launch-glint{to{transform:translateX(120%);opacity:0}}
     /* Запуск под музыку: 0–6 с разгон звёзд (надписи плавно уходят), 6–16 с отсчёт 10…1, ~15.5 с — прыжок и вспышка, дальше видео. */
     .stage.launching .eyebrow,.stage.launching .launch{visibility:visible;animation:fade-away 1s ease forwards}
-    .stage.launching .title-original{visibility:visible;animation:title-to-count 1.4s cubic-bezier(.2,.72,.24,1) forwards}
+    .stage.launching .title-original{visibility:visible;animation:title-out 1.3s cubic-bezier(.45,0,.55,1) forwards}   /* один плавный уход, без остановки посередине */
+    @keyframes title-out{to{opacity:0;transform:scale(.6);filter:blur(10px)}}
     .stage.launching .countdown{opacity:0;animation:none}
     .stage.counting .countdown{opacity:1;animation:countdown-enter .6s cubic-bezier(.2,.72,.24,1) both}
     .stage.launching .copy,.stage.launching .foot>a,.stage.launching .foot .right>span,.stage.launching .background-picker,.stage.launching:after{animation:none}
