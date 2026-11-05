@@ -140,6 +140,20 @@ const GT = L + 1;     // вспышка G
 const WALL = SITE && BEAT && param('wall', 0) ? T0 + VIEWS * STEP : Infinity;   // старт стены
 const ACCEL = GT - 8 * BEAT;                                                 // ускорение — такт до сборки
 const SLOGAN = 'Wszystko w jednym miejscu';
+// бенто: [колонка, строка, ширина, высота] в ячейках; карточки по порядку CARDS
+// горизонталь — 6×2 ячеек (большая Blogi 2×2, широкая Cargasm ID), вертикаль — 4×3
+const BENTO = V
+  ? { cols: 4, rows: 3, W: 960, H: 940, tiles: [[0,0,2,2],[2,0,1,1],[3,0,1,1],[2,1,1,1],[3,1,1,1],[0,2,1,1],[1,2,1,1],[2,2,2,1]] }
+  : { cols: 6, rows: 2, W: 1100, H: 640, tiles: [[0,0,2,2],[2,0,1,1],[3,0,1,1],[4,0,1,1],[5,0,1,1],[2,1,1,1],[3,1,1,1],[4,1,2,1]] };
+function bentoTile(i) {   // центр плитки (от центра карусели), её размер, масштаб карточки и обрезка (сверху — заголовок всегда виден)
+  const gap = 16, cw0 = V ? 547 : 377, ch0 = V ? 882 : 608;
+  const cellW = (BENTO.W - gap * (BENTO.cols - 1)) / BENTO.cols, cellH = (BENTO.H - gap * (BENTO.rows - 1)) / BENTO.rows;
+  const [c, r, w, h] = BENTO.tiles[i];
+  const tw = w * cellW + (w - 1) * gap, th = h * cellH + (h - 1) * gap;
+  const cx = -BENTO.W / 2 + c * (cellW + gap) + tw / 2, cy = -BENTO.H / 2 + r * (cellH + gap) + th / 2;
+  const s = Math.max(tw / cw0, th / ch0), vw = tw / s, vh = th / s;     // заполнить плитку, лишнее обрезать
+  return { cx, cy: cy + (ch0 - vh) / 2 * s, s, cut: { side: (cw0 - vw) / 2, bottom: ch0 - vh } };
+}
 // по долям: после вспышки G события логотипа встают на доли — буквы через 3, плашка через 6, «свет» через 9, полное свечение через 10
 const LOGO_BEATS = [[0, 0], [3, 1.1], [6, 2.4], [9, 3.45], [10, 3.85]];
 function logoTime(lt) {   // реальное время после старта логотипа → время анимации (вспышка на lt = 1)
@@ -272,7 +286,7 @@ function render(t, bass = 0) {   // bass — громкость баса тре�
   if (bv.paused ? Math.abs(bv.currentTime - bt) > .001 : Math.abs(bv.currentTime - bt) > .25) bv.currentTime = bt;
   bv.style.transform = `scale(${1 + .06 * outro})`;
   const hit = beatHits(t);   // удар фона на приземлении карточки и лёгкий пульс на каждый такт
-  bv.style.filter = `blur(${14 * (1 - intro) + 9 * outro}px) brightness(${(.35 + .65 * intro) * (1 - .1 * outro) * (1 + .35 * hit + .22 * bass)})`;
+  bv.style.filter = `blur(${14 * (1 - intro) + 9 * outro}px) brightness(${(.35 + .65 * intro) * (1 - .1 * outro) })`;
   $('deck').style.transform = `scale(${1 + .025 * bass})`;   // карусель «качается» вперёд на каждую ноту баса
 
   // карточки
@@ -290,24 +304,23 @@ function render(t, bass = 0) {   // bass — громкость баса тре�
     const punch = 1 + .05 * hit * clamp(1 - a);   // центральная карточка подпрыгивает при приземлении
     // карусель → стена (w) → одна карточка по центру (g)
     const w = ease(ramp(t, WALL, WALL + 2 * BEAT));
-    const cw = V ? 547 : 377, ch = V ? 882 : 608, gs = V ? .42 : .55, gap = 24;            // сетка 4×2
-    const gx = (i % 4 - 1.5) * (cw * gs + gap), gy = (Math.floor(i / 4) - .5) * (ch * gs + gap);
+    const bt = bentoTile(i);
     // подсветка по долям: какая карточка «звучит» сейчас (в ускорении — каждые полдоли)
     let hl = 0;
     if (t >= WALL + 2 * BEAT && t < GT - 4 * BEAT) {
       const unit = t >= ACCEL ? BEAT / 2 : BEAT, k = Math.floor((t - WALL - 2 * BEAT) / unit), ph = (t - WALL - 2 * BEAT) / unit - k;
       if (k % N === i) hl = Math.pow(1 - ph, 2);
     }
-    const x = (sg * lerp(X, a) * (1 - w) + gx * w) * g, y = gy * w * g;
+    const x = (sg * lerp(X, a) * (1 - w) + bt.cx * w) * g, y = bt.cy * w * g;
     const z = (lerp(Z, a) * (1 - w)) * g - 500 * (1 - pop) - 700 * leave;
-    const sc = 1 + ((punch * (1 - w) + gs * w * (1 + .1 * hl)) - 1) * g;
+    const sc = 1 + ((punch * (1 - w) + bt.s * w * (1 + .06 * hl)) - 1) * g;   // в стене — подёргивание плитки на её долю
+    const cut = w * g, rr = (V ? 40 : 28) / Math.max(.2, 1 + (bt.s - 1) * cut);
+    c.style.clipPath = cut > .001 ? `inset(0 ${bt.cut.side * cut}px ${bt.cut.bottom * cut}px ${bt.cut.side * cut}px round ${rr}px)` : '';
     c.style.transform = `translateX(${x}px) translateY(${y}px) translateZ(${z}px) rotateY(${-sg * lerp(RY, a) * (1 - w) * g}deg) rotateZ(${sg * lerp(RZ, a) * (1 - w) * g}deg) scale(${sc})`;
-    const glow = Math.max(hit * clamp(1 - a), hl);
-    c.style.boxShadow = `0 30px 70px rgba(0,0,0,.5), 0 0 ${60 * glow}px ${12 * glow}px rgba(255,255,255,${.28 * glow})`;
     c.style.filter = `blur(${lerp(BLUR, a) * (1 - w) * g + 10 * leave}px)`;
     c.style.opacity = (clamp(3.3 - Math.abs(d)) * (1 - w) + w) * pop * (1 - leave);
     c.style.zIndex = w > .5 ? 100 - i : 100 - Math.round(Math.abs(d) * 10);
-    c.lastChild.style.opacity = lerp(TINT, a) * .85 * (1 - w) + w * g * (1 - hl) * .3;   // в стене неподсвеченные чуть приглушены
+    c.lastChild.style.opacity = lerp(TINT, a) * .85 * (1 - w);
   });
 
   // заголовок и логотип в углу
