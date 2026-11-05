@@ -139,7 +139,7 @@
     const CONFIG = {
       launchEndpoint: "", // Защищённый endpoint, который активирует портал на cargasm.club
       scene: "scene/scene.html",                      // промо живым HTML: кадры рисуются по часам музыки, под любой экран
-      music: "music-liquid-art-103.m4a",              // «Liquid Art» (Coma-Media), ускорен на 3% без смены тональности: ~154.5 BPM, такт 1.549 с; дроп 12.46 с
+      music: "music-liquid-art-cut.mp3",              // «Liquid Art» (Coma-Media), обрезанный под ролик: 150 BPM, такт 1.6 с; дроп 12.86, тишина с 38.4, конец ~51 с
       destination: "https://cargasm.club/"
     };
     const stage=document.getElementById('stage'), button=document.getElementById('launch'), countdown=document.getElementById('countdown'), countdownDigit=document.getElementById('countdownDigit'), overlay=document.getElementById('presentation'), frame=document.getElementById('videoFrame'), bar=document.getElementById('progressBar');
@@ -150,18 +150,17 @@
       if(!audioContext)audioContext=new AudioContextClass();
       if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
     }
-    // Таймлайн (секунды от старта музыки) — по тактам трека: такт BAR (измерен по ударам), первый дроп на 12.46
-    const DROP=12.46, BAR=1.59586/1.03, MUSIC_DELAY=2.8;   // время ниже — от старта музыки, она начинается через 2.8 с после нажатия
+    // Таймлайн (секунды от старта музыки) — по тактам трека: такт BAR (измерен по ударам), дроп на 12.86
+    const DROP=12.86, BAR=1.59586, MUSIC_DELAY=2.8;   // время ниже — от старта музыки, она начинается через 2.8 с после нажатия
     // отсчёт 5…0 — на удары малого во вступлении (найдены в треке); «0» за такт до дропа, на дропе надписи улетают и появляется сцена
-    const COUNTDOWN=[[5,3.90],[4,5.45],[3,7.00],[2,8.56],[1,10.11],[0,11.66]];
+    const COUNTDOWN=[[5,4.04],[4,5.64],[3,7.24],[2,8.84],[1,10.44],[0,12.04]];
     const COUNT_AT=COUNTDOWN[0][1], WARP_AT=DROP;
-    // сцена стартует на дропе. Карусель в ритм: 8 карточек, смена каждые 2 такта на сильную долю (16 тактов);
-    // затем 8 тактов — бенто-плитки о каждом разделе, спокойно; потом они собираются в одну и уходят.
-    // Вспышка G — ровно когда музыка затихает (24 такта после дропа, 49.65 с от старта музыки); логотип собирается в тишине
-    // и держится до конца — 31 такт после дропа (60.49 с), затухание с 27-го такта
-    const SCENE={t0:0,step:2*BAR,views:8,gap:8*BAR-.8,hold:7*BAR,beat:BAR/4,wall:1};   // G в сцене = t0 + views × step + .8 + gap = 24 такта; beat — движения по долям
+    // сцена стартует на дропе. Карусель в ритм: 8 карточек, смена каждые 2 такта на сильную долю — вся громкая часть (16 тактов);
+    // перед её концом карточки собираются в одну и уходят. Вспышка G — ровно когда музыка затихает (16 тактов после дропа, 38.39 с),
+    // логотип собирается в тишине и держится до конца трека (24 такта после дропа, ~51 с)
+    const SCENE={t0:0,step:2*BAR,views:8,gap:-.8,hold:8*BAR,beat:BAR/4};   // G в сцене = t0 + views × step + .8 + gap = 16 тактов
     const VIDEO_AT=DROP, VIDEO_FROM=0, VIDEO_LEN=SCENE.t0+SCENE.views*SCENE.step+.8+SCENE.gap+SCENE.hold;
-    const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_AT=DROP+27*BAR;
+    const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_AT=MUSIC_LEN-.6;   // трек заканчивается сам — лишь короткий хвост
     let musicBuffer, musicSource, launchAt=null, timelineFrame=0, lastDigit=null;
     const vertical=matchMedia('(max-aspect-ratio: 1/1)').matches;
     // музыка: скачиваем и склеиваем заранее, чтобы по нажатию стартовать без задержки
@@ -298,8 +297,8 @@
         const launching = stage.classList.contains('launching');
         // разгон: 16 с всё быстрее; после «0» звёзды вытягиваются в линии — влёт в ноль
         const lt = launching && window.launchTime ? Math.max(0, window.launchTime() ?? 0) : 0;
-        const accel = Math.pow(Math.min(1, lt / 12.46), 2.4);
-        const warp = launching ? Math.pow(Math.max(0, Math.min(1, (lt - 10.11) / 2.35)), 1.6) : 0;  // с «1» до дропа — влетаем
+        const accel = Math.pow(Math.min(1, lt / 12.86), 2.4);
+        const warp = launching ? Math.pow(Math.max(0, Math.min(1, (lt - 10.44) / 2.42)), 1.6) : 0;  // с «1» до дропа — влетаем
         const stretch = warp * warp * 4.2;
         const colors = palette[stage.dataset.background] || palette.graphite;
         for (const p of particles) {
