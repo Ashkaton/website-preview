@@ -150,23 +150,24 @@
       if(!audioContext)audioContext=new AudioContextClass();
       if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
     }
-    // Таймлайн запуска (секунды от нажатия) — по тактам ускоренного трека: такт BAR = 1.6 / 1.06 с, первый дроп на 12.10
-    const DROP=12.10, BAR=1.6/1.06;
+    // Таймлайн запуска (секунды от нажатия) — по тактам ускоренного трека: такт BAR (измерен по ударам), первый дроп на 12.10
+    const DROP=12.10, BAR=1.50553;
     // отсчёт 5…0 — на удары малого во вступлении (найдены в треке); «0» за такт до дропа, на дропе надписи улетают и появляется сцена
     const COUNTDOWN=[[5,3.79],[4,5.29],[3,6.80],[2,8.31],[1,9.81],[0,11.32]];
     const COUNT_AT=COUNTDOWN[0][1], WARP_AT=DROP;
-    // сцена (scene/scene.html) стартует с начала на дропе; вспышка G — через 22 такта после дропа (сильная доля, 45.31 с),
-    // логотип собран, когда музыка затихает, и держится до конца — 31 такт после дропа (58.89 с), затухание с 27-го такта
-    const G_IN_SCENE=22*BAR, HOLD=9*BAR, SCENE_STEP=(G_IN_SCENE-2)/8;   // 8 карточек; G в сцене = 2 + 8 × шаг
-    const VIDEO_AT=DROP, VIDEO_FROM=0, VIDEO_LEN=G_IN_SCENE+HOLD;
-    const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_AT=DROP+27*BAR;
+    // сцена стартует на дропе. Карусель в ритм: каждая карточка встаёт на сильную долю, смена — каждые 3 такта, 15 показов (по кругу).
+    // Вспышка G — через 45 тактов после дропа (79.85 с, удар трека); логотип собран к ~83.3 с — музыка как раз заканчивается (~84.4 с);
+    // ещё такт тишины с логотипом, конец — 49 тактов после дропа (85.87 с)
+    const SCENE={t0:0,step:3*BAR,views:15,gap:-.8,hold:4*BAR};   // G в сцене = t0 + views × step + .8 + gap = 45 тактов
+    const VIDEO_AT=DROP, VIDEO_FROM=0, VIDEO_LEN=SCENE.t0+SCENE.views*SCENE.step+.8+SCENE.gap+SCENE.hold;
+    const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_AT=MUSIC_LEN-.5;   // трек сам заканчивается — затухание не нужно
     let musicBuffer, musicSource, launchAt=null, timelineFrame=0, lastDigit=null;
     const vertical=matchMedia('(max-aspect-ratio: 1/1)').matches;
     // музыка: скачиваем и склеиваем заранее, чтобы по нажатию стартовать без задержки
     const musicReady=fetch(CONFIG.music).then(r=>{if(!r.ok)throw new Error('Не удалось загрузить музыку');return r.arrayBuffer()}).then(async data=>{
       const SR=44100, ctx=new OfflineAudioContext(2,Math.ceil(SR*MUSIC_LEN),SR), track=await ctx.decodeAudioData(data);
       const out=ctx.createGain();out.connect(ctx.destination);
-      out.gain.setValueAtTime(1,FADE_AT);out.gain.linearRampToValueAtTime(0,MUSIC_LEN-.05);   // плавное затухание к концу
+      out.gain.setValueAtTime(1,FADE_AT);out.gain.linearRampToValueAtTime(0,MUSIC_LEN-.05);
       const src=ctx.createBufferSource();src.buffer=track;src.connect(out);src.start(0,0);
       return musicBuffer=await ctx.startRendering();
     });
@@ -175,7 +176,7 @@
     // сцену грузим сразу (скрытой), чтобы к 16-й секунде карточки и фон были загружены
     function prepareScene(){
       if(scene)return;
-      scene=document.createElement('iframe');scene.src=CONFIG.scene+(vertical?'?vertical':'?horizontal')+`&step=${SCENE_STEP}&hold=${HOLD}`;
+      scene=document.createElement('iframe');scene.src=CONFIG.scene+(vertical?'?vertical':'?horizontal')+'&'+new URLSearchParams(SCENE);
       scene.title='Cargasm — презентация';scene.setAttribute('aria-hidden','true');
       frame.replaceChildren(scene);
     }
