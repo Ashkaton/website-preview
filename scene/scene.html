@@ -234,10 +234,20 @@ const X = V ? [0, 300, 490, 640] : [0, 330, 560, 760], Z = V ? [0, -230, -460, -
 const RY = [0, 32, 40, 46], RZ = [0, 3, 6, 9];
 const BLUR = [0, 5, 8, 11], TINT = [0, 1, 1, 1];
 
+// по долям: карточка разгоняется и приходит на долю резко (а не плавно тормозит) — так слышно-видно попадание в такт
+const snap = x => x < .55 ? .45 * Math.pow(x / .55, 4.48) : .45 + .55 * (1 - Math.pow(1 - (x - .55) / .45, 3));
 function carouselPos(t) {
   if (t < T0) return 0;
   const k = Math.floor((t - T0) / STEP), f = t - T0 - k * STEP;
-  return Math.min(VIEWS - 1, k + ease(clamp((f - (STEP - MOVE)) / MOVE)));
+  return Math.min(VIEWS - 1, k + (BEAT ? snap : ease)(clamp((f - (STEP - MOVE)) / MOVE)));
+}
+// «удар» в такт: hit — момент приземления карточки (затухает за ~1.5 доли), pulse — сильная доля каждого такта во время карусели
+function beatHits(t) {
+  if (!BEAT || t < T0 + STEP - .01 || t > OUT0) return { hit: 0, pulse: 0 };
+  const decay = x => x < 0 ? 0 : Math.pow(clamp(1 - x / (1.5 * BEAT)), 2);
+  const land = T0 + Math.min(VIEWS - 1, Math.floor((t - T0) / STEP)) * STEP;      // последнее приземление
+  const bar = 4 * BEAT, sinceBar = (t - T0) % bar;
+  return { hit: decay(t - land), pulse: decay(sinceBar) };
 }
 
 // надпись под логотипом: ширина = ширине логотипа (видимая часть Logo.png — пиксели 8…2416 из 2589)
@@ -257,7 +267,8 @@ function render(t) {
   const bt = t % BG_LOOP, bv = $('bg');
   if (bv.paused ? Math.abs(bv.currentTime - bt) > .001 : Math.abs(bv.currentTime - bt) > .25) bv.currentTime = bt;
   bv.style.transform = `scale(${1 + .06 * outro})`;
-  bv.style.filter = `blur(${14 * (1 - intro) + 9 * outro}px) brightness(${(.35 + .65 * intro) * (1 - .1 * outro)})`;
+  const { hit, pulse } = beatHits(t);   // удар фона на приземлении карточки и лёгкий пульс на каждый такт
+  bv.style.filter = `blur(${14 * (1 - intro) + 9 * outro}px) brightness(${(.35 + .65 * intro) * (1 - .1 * outro) * (1 + .35 * hit + .12 * pulse)})`;
 
   // карточки
   const pos = carouselPos(t);
@@ -272,7 +283,9 @@ function render(t) {
     const leave = BEAT ? ease(ramp(t, GT - 2 * BEAT + (3 - a) * .03, GT - .5 * BEAT)) : ease(ramp(t, OUT0 + (3 - a) * .03, OUT0 + .55));
     const g = !SITE ? 1 : BEAT ? 1 - ease(ramp(t, GT - 4 * BEAT, GT - 2 * BEAT)) : 1 - ease(ramp(t, OUT0 - .8, OUT0 + .1));
     const z = lerp(Z, a) * g - 500 * (1 - pop) - 700 * leave;
-    c.style.transform = `translateX(${sg * lerp(X, a) * g}px) translateZ(${z}px) rotateY(${-sg * lerp(RY, a) * g}deg) rotateZ(${sg * lerp(RZ, a) * g}deg)`;
+    const punch = 1 + .05 * hit * clamp(1 - a);   // центральная карточка подпрыгивает при приземлении
+    c.style.transform = `translateX(${sg * lerp(X, a) * g}px) translateZ(${z}px) rotateY(${-sg * lerp(RY, a) * g}deg) rotateZ(${sg * lerp(RZ, a) * g}deg) scale(${punch})`;
+    c.style.boxShadow = `0 30px 70px rgba(0,0,0,.5), 0 0 ${60 * hit}px ${12 * hit}px rgba(255,255,255,${.28 * hit * clamp(1 - a)})`;
     c.style.filter = `blur(${lerp(BLUR, a) * g + 10 * leave}px)`;
     c.style.opacity = clamp(3.3 - Math.abs(d)) * pop * (1 - leave);
     c.style.zIndex = 100 - Math.round(Math.abs(d) * 10);
