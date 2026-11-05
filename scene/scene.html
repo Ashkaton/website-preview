@@ -37,11 +37,12 @@
 
   /* финал: логотип */
   #outro { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
-  /* запас 120px вокруг логотипа: Safari обрезает свечение по границам блока */
-  #lockup { position: absolute; left: 0; top: 50%; height: 96px; margin-top: -168px; padding: 120px; box-sizing: content-box; display: flex; align-items: center; }
+  #lockup { position: absolute; left: 0; top: 50%; height: 96px; margin-top: -48px; display: flex; align-items: center; }
   #mark { width: 600px; height: 87px; display: block; overflow: visible; }
   /* плашка CLUB из Club.svg; размеры и отступ — по пропорциям Logo.png */
-  #plate { margin-left: 48px; width: 243px; height: 111px; flex: none; overflow: visible; transform-origin: 0 50%; }
+  /* свечение плашки — на обёртке: Safari обрезает фильтр на самом <svg> по его границам */
+  #plateWrap { margin-left: 48px; flex: none; line-height: 0; }
+  #plate { width: 243px; height: 111px; overflow: visible; transform-origin: 0 50%; }
 
   /* вертикальная версия 1080×1920 (?vertical): всё то же, крупнее и по центру кадра */
   html.v, .v body, .v #stage, .v #outro { width: 1080px; height: 1920px; }
@@ -85,6 +86,7 @@
       <!-- продолжения граней стрелки: точно по её сторонам, без поворота -->
       <g id="chevLines" fill="none" stroke="#ff3a48" stroke-width=".24" stroke-linecap="round" filter="url(#neon)"></g>
     </svg>
+    <div id="plateWrap">
     <svg id="plate" viewBox="85.7222 64.2915 329 150">
       <defs>
         <linearGradient id="plateGrad" x1="347.108" y1="46.9838" x2="198.092" y2="264.968" gradientUnits="userSpaceOnUse">
@@ -100,6 +102,7 @@
         <path d="M367.282 154.643C367.282 158.265 366.302 161.294 364.343 163.728C362.443 166.104 359.859 167.885 356.593 169.073C353.327 170.26 349.735 170.854 345.816 170.854H314.997V107.613H350.18C353.149 107.613 355.703 108.414 357.84 110.018C360.038 111.562 361.7 113.581 362.829 116.075C364.016 118.569 364.61 121.152 364.61 123.824C364.61 126.793 363.838 129.643 362.294 132.375C360.75 135.047 358.494 137.066 355.525 138.432C359.147 139.501 361.997 141.401 364.076 144.132C366.213 146.864 367.282 150.368 367.282 154.643ZM352.407 151.704C352.407 150.338 352.14 149.15 351.605 148.141C351.071 147.072 350.358 146.24 349.468 145.647C348.636 144.993 347.627 144.667 346.439 144.667H329.604V158.473H345.816C347.063 158.473 348.161 158.176 349.111 157.582C350.121 156.989 350.922 156.187 351.516 155.177C352.11 154.168 352.407 153.01 352.407 151.704ZM329.604 120.083V133.177H343.945C345.014 133.177 345.994 132.939 346.885 132.464C347.835 131.989 348.607 131.276 349.2 130.326C349.794 129.317 350.091 128.07 350.091 126.585C350.091 125.16 349.824 123.972 349.289 123.022C348.814 122.072 348.161 121.36 347.33 120.884C346.499 120.35 345.548 120.083 344.48 120.083H329.604Z"/>
       </g>
     </svg>
+    </div>
   </div></div>
 </div>
 
@@ -359,9 +362,8 @@ function render(t, bass = 0) {   // bass — громкость баса тре�
   const plateW = 48 + 243;
   const focus = gC + (W / 2 - gC) * open + plateW / 2 * shift;
   const lock = $('lockup');
-  const LP = 120;   // поля #lockup
-  lock.style.transform = `translateX(${SW / 2 - focus - LP}px) scale(${1 + .7 * (1 - open)})`;
-  lock.style.transformOrigin = `${focus + LP}px 50%`;
+  lock.style.transform = `translateX(${SW / 2 - focus}px) scale(${1 + .7 * (1 - open)})`;
+  lock.style.transformOrigin = `${focus}px 50%`;
   lock.style.opacity = (lt > -.1 ? 1 : 0) * end2;
 
   // плашка: квадрат → растягивается вправо → буквы выезжают снизу по одной
@@ -371,7 +373,7 @@ function render(t, bass = 0) {   // bass — громкость баса тре�
   $('plateClipPath').setAttribute('d', plateD(pw));
   // свечение включается, когда плашка собрана: как лампа позади — пара вспышек и ровный свет
   const g = keyframes(lt, [[4.45, 0], [4.5, .7], [4.55, .15], [4.62, .9], [4.68, .45], [4.85, 1]]);
-  $('plate').style.filter = g > 0 ? `drop-shadow(0 18px 45px rgba(230,33,40,${.8 * g})) drop-shadow(0 6px 16px rgba(255,80,90,${.45 * g}))` : 'none';
+  $('plateWrap').style.filter = g > 0 ? `drop-shadow(0 18px 45px rgba(230,33,40,${.8 * g})) drop-shadow(0 6px 16px rgba(255,80,90,${.45 * g}))` : 'none';
   plateLetters.forEach((el, j) => {
     const q = easeOut(ramp(lt, 3.85 + j * .07, 4.15 + j * .07));
     el.setAttribute('transform', `translate(0 ${110 * (1 - q)})`);

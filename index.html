@@ -157,10 +157,10 @@
     const COUNT_AT=COUNTDOWN[0][1], WARP_AT=DROP;
     // сцена стартует на дропе. Карусель в ритм: 8 карточек, смена каждые 2 такта на сильную долю — вся громкая часть (16 тактов);
     // перед её концом карточки собираются в одну и уходят — к затиханию (16 тактов после дропа, 38.39 с) их уже нет; с затихания рисуется G,
-    // вспышка на 3-й доле, логотип собирается в тишине и держится до конца трека (23.5 такта после дропа, ~50.4 с)
-    const SCENE={t0:0,step:2*BAR,views:8,gap:-.8,hold:7.5*BAR,beat:BAR/4};   // G в сцене = t0 + views × step + .8 + gap = 16 тактов
+    // вспышка на 3-й доле, логотип собирается в тишине (полностью — через 10 долей после вспышки); ещё 1.2 с — и затухание с переходом на сайт
+    const SCENE={t0:0,step:2*BAR,views:8,gap:-.8,hold:13*BAR/4+1.2,beat:BAR/4};   // hold — от затихания: 3 доли до G + 10 долей логотипа + 1.2 с   // G в сцене = t0 + views × step + .8 + gap = 16 тактов
     const VIDEO_AT=DROP, VIDEO_FROM=0, VIDEO_LEN=SCENE.t0+SCENE.views*SCENE.step+.8+SCENE.gap+SCENE.hold;
-    const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_IN=4, FADE_AT=MUSIC_LEN-3;   // плавное нарастание в начале и затухание в конце
+    const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_IN=4, FADE_AT=MUSIC_LEN-2;   // плавное нарастание в начале и затухание в конце
     let musicBuffer, musicSource, launchAt=null, timelineFrame=0, lastDigit=null;
     const vertical=matchMedia('(max-aspect-ratio: 1/1)').matches;
     // музыка: скачиваем и склеиваем заранее, чтобы по нажатию стартовать без задержки
