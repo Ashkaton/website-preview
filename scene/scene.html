@@ -250,7 +250,8 @@ function render(t) {
     let d = ((i - pos) % N + N) % N;   // по кругу: слева и справа всегда есть карточки
     if (d > N / 2) d -= N;
     const a = Math.min(Math.abs(d), 3), sg = Math.sign(d);
-    const pop = appear((t - .2 - a * .15) / .9);           // появление из глубины
+    // появление из глубины; центральную карточку на сайте приносит «0» со страницы запуска — она уже на месте
+    const pop = SITE && i === 0 && t < 2 ? 1 : appear((t - .2 - a * .15) / .9);
     const leave = ease(ramp(t, OUT0 + (3 - a) * .03, OUT0 + .55)); // уход в глубину — до начала построения G
     const z = lerp(Z, a) - 500 * (1 - pop) - 700 * leave;
     c.style.transform = `translateX(${sg * lerp(X, a)}px) translateZ(${z}px) rotateY(${-sg * lerp(RY, a)}deg) rotateZ(${sg * lerp(RZ, a)}deg)`;
