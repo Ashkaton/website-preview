@@ -172,6 +172,19 @@
       return musicBuffer=await ctx.startRendering();
     });
     musicReady.catch(console.error);
+    // бас трека: громкость низов по кадрам (10 мс) — им «качается» сцена ровно в рисунок баса (ту-ут, ту-ут)
+    let bassEnv=null;
+    musicReady.then(async buf=>{
+      const ctx=new OfflineAudioContext(1,buf.length,buf.sampleRate), src=ctx.createBufferSource();src.buffer=buf;
+      const f1=ctx.createBiquadFilter(), f2=ctx.createBiquadFilter();f1.type=f2.type='lowpass';f1.frequency.value=f2.frequency.value=90;
+      src.connect(f1).connect(f2).connect(ctx.destination);src.start();
+      const d=(await ctx.startRendering()).getChannelData(0), H=Math.round(buf.sampleRate/100), env=new Float32Array(Math.floor(d.length/H));
+      for(let i=0;i<env.length;i++){let e=0;for(let j=i*H;j<(i+1)*H;j++)e+=d[j]*d[j];env[i]=Math.sqrt(e/H);}
+      let mx=0;for(const v of env)mx=Math.max(mx,v);
+      let v=0;for(let i=0;i<env.length;i++){const x=env[i]/mx;v+=(x-v)*(x>v?.6:.15);env[i]=v;}   // быстрая атака, мягкий спад
+      bassEnv=env;
+    }).catch(console.error);
+    const bassAt=t=>bassEnv&&t>=0?bassEnv[Math.min(bassEnv.length-1,Math.floor(t*100))]:0;
     // видео грузим сразу, показываем на VIDEO_AT
     // сцену грузим сразу (скрытой), чтобы к 16-й секунде карточки и фон были загружены
     function prepareScene(){
@@ -203,7 +216,7 @@
         if(!overlay.classList.contains('active')){overlay.classList.add('active');overlay.setAttribute('aria-hidden','false');scene.contentWindow.fit?.();}
         if(t>=VIDEO_AT+.9&&stage.style.visibility!=='hidden')stage.style.visibility='hidden';  // после проявления видео (.8 с)
         const vt=t-VIDEO_AT+VIDEO_FROM;   // время сцены — прямо от часов музыки
-        scene.contentWindow.render?.(Math.min(vt,VIDEO_LEN));
+        scene.contentWindow.render?.(Math.min(vt,VIDEO_LEN),bassAt(t));
         bar.style.width=Math.min(vt/VIDEO_LEN,1)*100+'%';
         if(vt>=VIDEO_LEN)finishPresentation();
       }
