@@ -254,9 +254,10 @@ function render(t) {
     const a = Math.min(Math.abs(d), 3), sg = Math.sign(d);
     const pop = appear((t - .2 - a * .15) / .9);           // появление из глубины
     const leave = ease(ramp(t, OUT0 + (3 - a) * .03, OUT0 + .55)); // уход в глубину — до начала построения G
-    const z = lerp(Z, a) - 500 * (1 - pop) - 700 * leave;
-    c.style.transform = `translateX(${sg * lerp(X, a)}px) translateZ(${z}px) rotateY(${-sg * lerp(RY, a)}deg) rotateZ(${sg * lerp(RZ, a)}deg)`;
-    c.style.filter = `blur(${lerp(BLUR, a) + 10 * leave}px)`;
+    const g = SITE ? 1 - ease(ramp(t, OUT0 - .8, OUT0 + .1)) : 1;     // на сайте перед уходом карточки собираются в одну по центру
+    const z = lerp(Z, a) * g - 500 * (1 - pop) - 700 * leave;
+    c.style.transform = `translateX(${sg * lerp(X, a) * g}px) translateZ(${z}px) rotateY(${-sg * lerp(RY, a) * g}deg) rotateZ(${sg * lerp(RZ, a) * g}deg)`;
+    c.style.filter = `blur(${lerp(BLUR, a) * g + 10 * leave}px)`;
     c.style.opacity = clamp(3.3 - Math.abs(d)) * pop * (1 - leave);
     c.style.zIndex = 100 - Math.round(Math.abs(d) * 10);
     c.lastChild.style.opacity = lerp(TINT, a) * .85;
@@ -272,7 +273,7 @@ function render(t) {
   let idx = -1, typeStart = 0, end = 0;
   for (let i = 0; i < VIEWS; i++) {
     const s = i === 0 ? T0 + .1 : T0 + i * STEP + .1;
-    const e = T0 + (i + 1) * STEP - MOVE;
+    const e = Math.min(T0 + (i + 1) * STEP - MOVE, OUT0 - .3);   // последняя подпись уходит вместе с карточками
     if (t >= s - .01 && t < e + .3) { idx = i; typeStart = s; end = e; }
   }
   const cap = $('caption');

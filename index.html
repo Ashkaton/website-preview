@@ -155,19 +155,19 @@
     // отсчёт 5…0 — на удары малого во вступлении (найдены в треке); «0» за такт до дропа, на дропе надписи улетают и появляется сцена
     const COUNTDOWN=[[5,3.79],[4,5.29],[3,6.80],[2,8.31],[1,9.81],[0,11.32]];
     const COUNT_AT=COUNTDOWN[0][1], WARP_AT=DROP;
-    // сцена стартует на дропе. Карусель в ритм: каждая карточка встаёт на сильную долю, смена — каждые 3 такта, 15 показов (по кругу).
-    // Вспышка G — через 45 тактов после дропа (79.85 с, удар трека); логотип собран к ~83.3 с — музыка как раз заканчивается (~84.4 с);
-    // ещё такт тишины с логотипом, конец — 49 тактов после дропа (85.87 с)
-    const SCENE={t0:0,step:3*BAR,views:15,gap:-.8,hold:4*BAR};   // G в сцене = t0 + views × step + .8 + gap = 45 тактов
+    // сцена стартует на дропе. Карусель в ритм: каждая карточка встаёт на сильную долю, смена — каждые 3 такта, 8 карточек = 24 такта.
+    // Перед концом карусели карточки собираются в одну и исчезают; вспышка G — ровно когда музыка затихает (24 такта после дропа, 48.23 с),
+    // логотип собирается в тишине и держится до конца — 31 такт после дропа (58.89 с), затухание с 27-го такта
+    const SCENE={t0:0,step:3*BAR,views:8,gap:-.8,hold:7*BAR};   // G в сцене = t0 + views × step + .8 + gap = 24 такта
     const VIDEO_AT=DROP, VIDEO_FROM=0, VIDEO_LEN=SCENE.t0+SCENE.views*SCENE.step+.8+SCENE.gap+SCENE.hold;
-    const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_AT=MUSIC_LEN-.5;   // трек сам заканчивается — затухание не нужно
+    const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_AT=DROP+27*BAR;
     let musicBuffer, musicSource, launchAt=null, timelineFrame=0, lastDigit=null;
     const vertical=matchMedia('(max-aspect-ratio: 1/1)').matches;
     // музыка: скачиваем и склеиваем заранее, чтобы по нажатию стартовать без задержки
     const musicReady=fetch(CONFIG.music).then(r=>{if(!r.ok)throw new Error('Не удалось загрузить музыку');return r.arrayBuffer()}).then(async data=>{
       const SR=44100, ctx=new OfflineAudioContext(2,Math.ceil(SR*MUSIC_LEN),SR), track=await ctx.decodeAudioData(data);
       const out=ctx.createGain();out.connect(ctx.destination);
-      out.gain.setValueAtTime(1,FADE_AT);out.gain.linearRampToValueAtTime(0,MUSIC_LEN-.05);
+      out.gain.setValueAtTime(1,FADE_AT);out.gain.linearRampToValueAtTime(0,MUSIC_LEN-.05);   // плавное затухание к концу
       const src=ctx.createBufferSource();src.buffer=track;src.connect(out);src.start(0,0);
       return musicBuffer=await ctx.startRendering();
     });
