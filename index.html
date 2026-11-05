@@ -139,7 +139,7 @@
     const CONFIG = {
       launchEndpoint: "", // Защищённый endpoint, который активирует портал на cargasm.club
       scene: "scene/scene.html",                      // промо живым HTML: кадры рисуются по часам музыки, под любой экран
-      music: "music.mp3",                             // «The Mountain», 90 BPM (доля 2/3 с), дропы на 16.02 и 80.02 с
+      music: "music-liquid-art.mp3",                  // «Liquid Art» (Coma-Media), 150 BPM, такт 1.6 с; дропы на 12.84 и 64.04 с
       destination: "https://cargasm.club/"
     };
     const stage=document.getElementById('stage'), button=document.getElementById('launch'), countdown=document.getElementById('countdown'), countdownDigit=document.getElementById('countdownDigit'), overlay=document.getElementById('presentation'), frame=document.getElementById('videoFrame'), bar=document.getElementById('progressBar');
@@ -150,24 +150,23 @@
       if(!audioContext)audioContext=new AudioContextClass();
       if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
     }
-    // Таймлайн запуска (секунды от нажатия) — по долям трека: 90 BPM, доля 2/3 с, такт 4 доли, дроп на 16.02.
-    const DROP=16.02;
-    // отсчёт 5…0 с 6-й секунды — на удары малого барабана (бэкбит каждые 2 доли, найдены в треке);
-    // после «0» — пауза до дропа (16.02): звёзды вытягиваются, на дропе надписи улетают со вспышкой и проявляется видео
-    const COUNTDOWN=[[5,6.025],[4,7.355],[3,8.69],[2,10.025],[1,11.355],[0,12.69]];
+    // Таймлайн запуска (секунды от нажатия) — по тактам трека «Liquid Art»: 150 BPM, такт 1.6 с, первый дроп на 12.84
+    const DROP=12.84;
+    // отсчёт 5…0 — на удары малого во вступлении (каждые 1.6 с); «0» за такт до дропа, на дропе надписи улетают и появляется сцена
+    const COUNTDOWN=[[5,4.04],[4,5.64],[3,7.24],[2,8.84],[1,10.44],[0,12.04]];
     const COUNT_AT=COUNTDOWN[0][1], WARP_AT=DROP;
-    // сцена (scene/scene.html) стартует с начала ровно на дропе: фон проявляется, карточки вылетают из глубины;
-    // вспышка G (40 с сцены) — на сильную долю 56.02 с, логотип собран к 1:00 и держится до 1:10
-    const VIDEO_AT=DROP, VIDEO_FROM=0, VIDEO_LEN=53.98;
-    // трек идёт целиком, без склеек: G — на сильную долю (15 тактов после дропа), затухание 1:00 → 1:10
-    const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_AT=60;
+    // сцена (scene/scene.html) стартует с начала на дропе: фон проявляется, карточки вылетают из глубины;
+    // вспышка G (35.2 с сцены) — на сильную долю 48.04 с, логотип собран к ~51.5 с, когда музыка затихает, и держится до конца
+    const VIDEO_AT=DROP, VIDEO_FROM=0, VIDEO_LEN=49.6;
+    // трек идёт целиком, без склеек; конец на 62.44 с — сильная доля перед вторым дропом, затухание с 56.04 с
+    const MUSIC_LEN=VIDEO_AT+VIDEO_LEN-VIDEO_FROM, FADE_AT=56.04;
     let musicBuffer, musicSource, launchAt=null, timelineFrame=0, lastDigit=null;
     const vertical=matchMedia('(max-aspect-ratio: 1/1)').matches;
     // музыка: скачиваем и склеиваем заранее, чтобы по нажатию стартовать без задержки
     const musicReady=fetch(CONFIG.music).then(r=>{if(!r.ok)throw new Error('Не удалось загрузить музыку');return r.arrayBuffer()}).then(async data=>{
       const SR=44100, ctx=new OfflineAudioContext(2,Math.ceil(SR*MUSIC_LEN),SR), track=await ctx.decodeAudioData(data);
       const out=ctx.createGain();out.connect(ctx.destination);
-      out.gain.setValueAtTime(1,FADE_AT);out.gain.linearRampToValueAtTime(0,MUSIC_LEN-.05);   // плавное затухание 1:00 → 1:10
+      out.gain.setValueAtTime(1,FADE_AT);out.gain.linearRampToValueAtTime(0,MUSIC_LEN-.05);   // плавное затухание к концу
       const src=ctx.createBufferSource();src.buffer=track;src.connect(out);src.start(0,0);
       return musicBuffer=await ctx.startRendering();
     });
@@ -197,7 +196,7 @@
           if(digit<5)countdownDigit.animate([{opacity:.35,transform:'scale(.78)',filter:'blur(5px)'},{opacity:1,transform:'scale(1.1)',filter:'blur(0)',offset:.68},{opacity:1,transform:'scale(1)',filter:'blur(0)'}],{duration:600,easing:'cubic-bezier(.2,.72,.24,1)'});
         }
       }
-      if(t>=ZERO_AT&&t<DROP+1)countdown.firstElementChild.style.opacity=1-smooth((t-ZERO_AT-.7)/.8);   // «0» тает (13.4 → 14.2 с)
+      if(t>=ZERO_AT&&t<DROP+1)countdown.firstElementChild.style.opacity=1-smooth((t-ZERO_AT-.2)/.55);   // «0» тает до дропа (12.24 → 12.79 с)
       if(t>=WARP_AT&&!stage.classList.contains('warping'))stage.classList.add('warping');
       if(t>=VIDEO_AT){
         if(!overlay.classList.contains('active')){overlay.classList.add('active');overlay.setAttribute('aria-hidden','false');scene.contentWindow.fit?.();}
@@ -283,8 +282,8 @@
         const launching = stage.classList.contains('launching');
         // разгон: 16 с всё быстрее; после «0» звёзды вытягиваются в линии — влёт в ноль
         const lt = launching && window.launchTime ? Math.max(0, window.launchTime() ?? 0) : 0;
-        const accel = Math.pow(Math.min(1, lt / 16.02), 2.4);
-        const warp = launching ? Math.pow(Math.max(0, Math.min(1, (lt - 12.69) / 3.33)), 1.6) : 0;  // с «0» до дропа — влетаем
+        const accel = Math.pow(Math.min(1, lt / 12.84), 2.4);
+        const warp = launching ? Math.pow(Math.max(0, Math.min(1, (lt - 10.44) / 2.4)), 1.6) : 0;  // с «1» до дропа — влетаем
         const stretch = warp * warp * 4.2;
         const colors = palette[stage.dataset.background] || palette.graphite;
         for (const p of particles) {
