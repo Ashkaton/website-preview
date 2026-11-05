@@ -37,7 +37,8 @@
 
   /* финал: логотип */
   #outro { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
-  #lockup { position: absolute; left: 0; top: 50%; height: 96px; margin-top: -48px; display: flex; align-items: center; }
+  /* запас 120px вокруг логотипа: Safari обрезает свечение по границам блока */
+  #lockup { position: absolute; left: 0; top: 50%; height: 96px; margin-top: -168px; padding: 120px; box-sizing: content-box; display: flex; align-items: center; }
   #mark { width: 600px; height: 87px; display: block; overflow: visible; }
   /* плашка CLUB из Club.svg; размеры и отступ — по пропорциям Logo.png */
   #plate { margin-left: 48px; width: 243px; height: 111px; flex: none; overflow: visible; transform-origin: 0 50%; }
@@ -269,7 +270,12 @@ function render(t, bass = 0) {   // bass — громкость баса тре�
   const intro = easeOut(ramp(t, 0, 1.4));
   const outro = ease(ramp(t, OUT0, OUT1 + .4));
   const bt = t % BG_LOOP, bv = $('bg');
-  if (bv.paused ? Math.abs(bv.currentTime - bt) > .001 : Math.abs(bv.currentTime - bt) > .25) bv.currentTime = bt;
+  // фон должен идти сам; если браузер его не запустил (Safari в скрытом блоке, энергосбережение) — пробуем запустить раз в секунду,
+  // а пока стоит — двигаем перемоткой, но только когда прошлая перемотка закончилась (иначе Safari замирает на кадре)
+  if (bv.paused) {
+    if (!bv._tryAt || performance.now() - bv._tryAt > 1000) { bv._tryAt = performance.now(); bv.play().catch(() => {}); }
+    if (!bv.seeking && Math.abs(bv.currentTime - bt) > .1) bv.currentTime = bt;
+  } else if (Math.abs(bv.currentTime - bt) > .25 && !bv.seeking) bv.currentTime = bt;
   bv.style.transform = `scale(${1 + .06 * outro})`;
   const hit = beatHits(t);   // удар фона на приземлении карточки и лёгкий пульс на каждый такт
   bv.style.filter = `blur(${14 * (1 - intro) + 9 * outro}px) brightness(${(.35 + .65 * intro) * (1 - .1 * outro) })`;
@@ -353,8 +359,9 @@ function render(t, bass = 0) {   // bass — громкость баса тре�
   const plateW = 48 + 243;
   const focus = gC + (W / 2 - gC) * open + plateW / 2 * shift;
   const lock = $('lockup');
-  lock.style.transform = `translateX(${SW / 2 - focus}px) scale(${1 + .7 * (1 - open)})`;
-  lock.style.transformOrigin = `${focus}px 50%`;
+  const LP = 120;   // поля #lockup
+  lock.style.transform = `translateX(${SW / 2 - focus - LP}px) scale(${1 + .7 * (1 - open)})`;
+  lock.style.transformOrigin = `${focus + LP}px 50%`;
   lock.style.opacity = (lt > -.1 ? 1 : 0) * end2;
 
   // плашка: квадрат → растягивается вправо → буквы выезжают снизу по одной
