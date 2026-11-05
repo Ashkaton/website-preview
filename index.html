@@ -180,7 +180,7 @@
     const launchTime=()=>launchAt===null?null:(audioContext?audioContext.currentTime:performance.now()/1000)-launchAt;
     window.launchTime=launchTime;
     // «0»: растёт — мы в него влетаем; ближе к дропу плавно исчезает
-    const ZERO_AT=COUNTDOWN[COUNTDOWN.length-1][1], FADE_START=ZERO_AT+(DROP-ZERO_AT)*.35, FADE_LEN=1.4;
+    const ZERO_AT=COUNTDOWN[COUNTDOWN.length-1][1], FADE_START=ZERO_AT+(DROP-ZERO_AT)*.35, FADE_LEN=.6;
     const zeroScale=p=>Math.pow(40,Math.pow(p,2.4));
     function timeline(){
       const t=launchTime();if(t===null)return;
