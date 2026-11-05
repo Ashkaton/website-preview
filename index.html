@@ -151,7 +151,7 @@
       if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
     }
     // Таймлайн запуска (секунды от нажатия) — по тактам ускоренного трека: такт BAR (измерен по ударам), первый дроп на 12.10
-    const DROP=12.10, BAR=1.50553;
+    const DROP=12.10, BAR=1.50553, MUSIC_DELAY=2.8;   // время ниже — от старта музыки, она начинается через 2.8 с после нажатия
     // отсчёт 5…0 — на удары малого во вступлении (найдены в треке); «0» за такт до дропа, на дропе надписи улетают и появляется сцена
     const COUNTDOWN=[[5,3.79],[4,5.29],[3,6.80],[2,8.31],[1,9.81],[0,11.32]];
     const COUNT_AT=COUNTDOWN[0][1], WARP_AT=DROP;
@@ -216,7 +216,8 @@
         if(CONFIG.launchEndpoint){const response=await fetch(CONFIG.launchEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'launch'}),credentials:'same-origin'});if(!response.ok)throw new Error('Не удалось подтвердить запуск. Попробуйте ещё раз.');}
         await musicReady;
         musicSource=audioContext.createBufferSource();musicSource.buffer=musicBuffer;musicSource.connect(audioContext.destination);
-        launchAt=audioContext.currentTime+.05;musicSource.start(launchAt);
+        // пауза: сначала уходят «Момент настал», лого и подвал (до 2.6 с), потом стартует музыка — от неё считается весь таймлайн
+        launchAt=audioContext.currentTime+.05+MUSIC_DELAY;musicSource.start(launchAt);
         stage.dataset.countdown='5';countdownDigit.textContent='5';lastDigit=null;
         stage.classList.add('launching');
         timelineFrame=requestAnimationFrame(timeline);
