@@ -123,6 +123,10 @@ const BG_LOOP = 30;    // длина видео-фона, с
 // t0 (старт), step (шаг), views (сколько раз сменятся карточки, по кругу), gap (сдвиг ухода карточек), hold (логотип после вспышки G)
 const SITE = true;
 const PARAMS = new URLSearchParams(location.search), param = (k, d) => PARAMS.has(k) ? +PARAMS.get(k) : d;
+const RENDER = PARAMS.has('render');   // покадровый рендер в видео (ролик для соцсетей): фон не играет сам, а ставится на кадр
+// рендеру: дождаться, пока фон перемотается на нужный кадр
+window.bgSeeked = () => new Promise(r => { const v = document.getElementById('bg');
+  if (!v.seeking && v.readyState >= 2) return r(); v.addEventListener('seeked', () => requestAnimationFrame(() => r()), { once: true }); });
 const T0 = SITE ? param('t0', 1.2) : 1.2;          // карусель стартует
 const STEP = SITE ? param('step', 4.15) : 3.2;     // секунд на карточку
 const VIEWS = SITE ? param('views', N) : N;        // показов карточек (больше N — второй круг)
@@ -275,7 +279,8 @@ function render(t, bass = 0) {   // bass — громкость баса тре�
   const bt = t % BG_LOOP, bv = $('bg');
   // фон должен идти сам; если браузер его не запустил (Safari в скрытом блоке, энергосбережение) — пробуем запустить раз в секунду,
   // а пока стоит — двигаем перемоткой, но только когда прошлая перемотка закончилась (иначе Safari замирает на кадре)
-  if (bv.paused) {
+  if (RENDER) { if (Math.abs(bv.currentTime - bt) > .001) bv.currentTime = bt; }   // покадровый рендер: фон точно по кадру
+  else if (bv.paused) {
     if (!bv._tryAt || performance.now() - bv._tryAt > 1000) { bv._tryAt = performance.now(); bv.play().catch(() => {}); }
     if (!bv.seeking && Math.abs(bv.currentTime - bt) > .1) bv.currentTime = bt;
   } else if (Math.abs(bv.currentTime - bt) > .25 && !bv.seeking) bv.currentTime = bt;
@@ -397,6 +402,7 @@ function fit() {
   $('vignette').setAttribute('style', box(0));
 }
 addEventListener('resize', fit); fit();
+if (RENDER) { $('bg').autoplay = false; $('bg').pause(); }   // в рендере фон только перематывается
 // Страница запуска сама вызывает render(t) по часам музыки; открытая отдельно сцена проигрывается сама — для проверки.
 if (window.parent === window) {
   const t0 = performance.now();
